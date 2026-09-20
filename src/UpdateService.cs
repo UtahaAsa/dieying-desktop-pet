@@ -23,7 +23,7 @@ namespace DieYing
     {
         internal const string Repository = "UtahaAsa/dieying-desktop-pet";
         internal const string PackageName = "DieYing-Windows.zip";
-        internal const string VersionText = "0.3.0";
+        internal const string VersionText = "0.3.1";
         internal const long MaxPackageBytes = 512L * 1024 * 1024;
         internal static readonly Version CurrentVersion = new Version(VersionText);
 

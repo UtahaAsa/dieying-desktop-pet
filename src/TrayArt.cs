@@ -20,7 +20,7 @@ namespace DieYing
             using (Bitmap atlas = new Bitmap(standalone ? portraitFile : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "approved", "animation-parts.png")))
             {
                 if(skin>=2)
-                using(var eyes=new Bitmap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"assets","zhu","star-eyes.png")))
+                using(var eyes=new Bitmap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"assets","zhu","star-eyes-small.png")))
                 using(var paint=Graphics.FromImage(atlas))
                 {
                     foreach(int x in new int[]{515,743})using(var mask=new GraphicsPath())

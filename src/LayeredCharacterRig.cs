@@ -21,7 +21,7 @@ namespace DieYing
         }
         private sealed class Costume
         {
-            internal Layer body, mouse;
+            internal Layer body, mouse, chestCover;
             internal Layer blinkEyes;
             internal Layer[] mouseDown=new Layer[3];
             internal Layer[] iris=new Layer[2], brows=new Layer[2], arms=new Layer[2], moods=new Layer[6];
@@ -75,7 +75,7 @@ namespace DieYing
             using(var plate=new Bitmap(Path.Combine(directory,name+"-plate.png")))
             using(var parts=new Bitmap(Path.Combine(directory,name+"-parts.png")))
             using(var closed=new Bitmap(Path.Combine(directory,name+"-closed.png")))
-            using(var starEyes=new Bitmap(Path.Combine(directory,"star-eyes.png")))
+            using(var starEyes=new Bitmap(Path.Combine(directory,"star-eyes-small.png")))
             {
                 if(original.Width!=1323||original.Height!=1189||plate.Size!=original.Size||closed.Size!=original.Size)throw new InvalidDataException("朱慧月图层尺寸不匹配");
                 c.body=Upload(plate,Map(new RectangleF(0,0,1323,1189)),0,PointF.Empty);
@@ -112,9 +112,7 @@ namespace DieYing
                         Rectangle r=Rectangle.Ceiling(p.GetBounds());c.brows[eye]=Cut(original,r,r,6,new PointF(bx+40,462),p);
                     }
                 }
-                // 原稿的肩袖和圆手一起裁出，避免生成素材改变手型或袖口。
-                c.arms[0]=OriginalCut(original,7,new PointF(557,728),new PointF(350,817),new PointF(393,778),new PointF(464,750),new PointF(540,722),new PointF(570,729),new PointF(581,918),new PointF(553,925),new PointF(495,869),new PointF(475,876),new PointF(391,878),new PointF(355,856));
-                c.arms[1]=OriginalCut(original,8,new PointF(807,729),new PointF(774,846),new PointF(799,766),new PointF(837,726),new PointF(863,728),new PointF(944,777),new PointF(986,810),new PointF(1012,845),new PointF(989,858),new PointF(975,852),new PointF(951,867),new PointF(883,868),new PointF(850,847));
+                LoadCleanZhuParts(c,directory,stage);
                 c.arms[0].rest=Map(423,838);c.arms[1].rest=Map(916,838);
                 // 共用同一个独立完整鼠标；颜色与两套红色衣装一致。
                 using(var mouseSheet=new Bitmap(Path.Combine(directory,"casual-parts.png")))
@@ -188,6 +186,7 @@ namespace DieYing
             int buttonMask=(pose.leftButton?1:0)|(pose.rightButton?2:0);DrawLayer(buttonMask==0?c.mouse:c.mouseDown[buttonMask-1],pose,0,mouseOffset);
             DrawLayer(c.arms[0],pose,0,new PointF(mouseOffset.X,mouseOffset.Y+pose.mousePress*1.3f));
             DrawLayer(c.arms[1],pose,0,new PointF(0,pose.keyPress*2));
+            if(c.chestCover!=null)DrawLayer(c.chestCover,pose,0,PointF.Empty);
             canvas.Present(g,scale);
         }
         private void DrawKeys(KeyboardModel keyboard,MotionState pose,bool labels,Costume c)
@@ -217,7 +216,10 @@ namespace DieYing
             float u=x/(float)count,v=y/(float)count;PointF p=new PointF(layer.bounds.X+u*layer.bounds.Width,layer.bounds.Y+v*layer.bounds.Height);
             if(layer.kind==7||layer.kind==8)
             {
-                PointF rest=layer.rest;p=ArmRig.TransformBound(p,layer.pivot,rest,V.Add(rest,offset),PointF.Empty);
+                PointF rest=layer.rest;
+                PointF reference=new PointF(layer.pivot.X,layer.pivot.Y+layer.headShift);
+                PointF shoulderOffset=V.Sub(SurfaceRig.Transform(reference,pose),reference);
+                p=ArmRig.TransformBound(p,layer.pivot,rest,V.Add(rest,offset),shoulderOffset);
             }
             else if(layer.kind==9)p=V.Add(p,offset);
             else

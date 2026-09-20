@@ -1,6 +1,10 @@
 # 四套衣装素材与分层
 
-版本：0.3.0。当前渲染入口为 SceneRenderer → LayeredCharacterRig，HuangLayers 是同一渲染器的黄玲琳素材适配部分。四套服装共同使用 SurfaceRig 身体动作和 ArmRig.TransformBound 肩腕绑定；键盘画面与输入共用 KeyboardModel。
+版本：0.3.1。当前渲染入口为 SceneRenderer → LayeredCharacterRig，HuangLayers 是同一渲染器的黄玲琳素材适配部分。四套服装共同使用 SurfaceRig 身体动作和 ArmRig.TransformBound 肩腕绑定；键盘画面与输入共用 KeyboardModel。
+
+本次接缝修复：CleanLayers 从透明部件图加载完整肩袖和眉毛，替代母图上的窄路径裁切。黄玲琳 classic/stage-limbs、朱慧月 stage-limbs 由内置 imagegen 依据原母图提取；朱慧月常服复用已有 casual-parts 的透明袖子。要求保留团子手、刺绣和袖口轮廓、排除头发/胸口/桌面；生成部件按肩点和掌心重新映射到运行坐标。肩点跟随身体同一变形，常服衣襟在肩袖前遮挡。黄玲琳眼部覆盖改为沿眼睛外轮廓的多边形，包含上睫毛尖；眉毛独立且完整。朱慧月 star-eyes-small 为局部缩小星形瞳孔版本，金色虹膜保持。
+
+新增回归检查：固定其它动作状态，仅改变键盘敲击或鼠标位置，验证胸口衣襟像素不变。审阅仍须检查放大后的图层边缘和运动姿态，不能用输入检查数量替代美术验收。
 
 ## 黄玲琳
 

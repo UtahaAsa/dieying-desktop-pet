@@ -30,7 +30,7 @@ namespace DieYing
                 for(int skin=0;skin<4;skin++)
                 {
                     var left=Pose();left.leftButton=true;var right=Pose();right.rightButton=true;var blink=Pose();blink.blinkAmount=1;
-                    Rectangle mouth=skin==0?new Rectangle(352,299,35,23):skin==1?new Rectangle(373,299,35,23):new Rectangle(382,360,47,30);
+                    Rectangle mouth=skin==0?new Rectangle(358,301,25,19):skin==1?new Rectangle(384,303,15,18):new Rectangle(382,360,47,30);
                     Rectangle ml=skin==0?new Rectangle(233,433,15,8):skin==1?new Rectangle(242,437,15,8):new Rectangle(219,511,15,8);
                     Rectangle mr=skin==0?new Rectangle(275,433,15,8):skin==1?new Rectangle(287,437,15,8):new Rectangle(279,511,15,8);
                     using(var natural=Render(scene,skin,Pose(),0))using(var closed=Render(scene,skin,blink,0))
@@ -44,6 +44,17 @@ namespace DieYing
                         Check(report,Diff(natural,released,new Rectangle(0,0,800,680))==0,"release restores original skin="+skin);
                         gallery.DrawImageUnscaled(natural,skin%2*800,skin/2*680);
                         natural.Save(Path.Combine(folder,"skin"+skin+"-natural.png"));ld.Save(Path.Combine(folder,"skin"+skin+"-left.png"));rd.Save(Path.Combine(folder,"skin"+skin+"-right.png"));
+                    }
+                    var tap=Pose();tap.keyPress=1;
+                    var mouseMove=Pose();mouseMove.mouseCenter=new PointF(258,563);
+                    // 常服衣襟下缘从 x=346 开始；左侧斜袖本来就应随手活动。
+                    Rectangle chest=skin>=2?new Rectangle(357,413,101,56):skin==0?new Rectangle(349,345,76,53):new Rectangle(363,345,70,53);
+                    using(var rest=Render(scene,skin,Pose(),0))using(var pressed=Render(scene,skin,tap,0))using(var moved=Render(scene,skin,mouseMove,0))
+                    {
+                        Check(report,Diff(rest,pressed,chest)==0,"keyboard tap cannot drag chest fabric skin="+skin);
+                        Check(report,Diff(rest,moved,chest)==0,"mouse sleeve cannot drag chest fabric skin="+skin);
+                        pressed.Save(Path.Combine(folder,"skin"+skin+"-tap.png"));
+                        moved.Save(Path.Combine(folder,"skin"+skin+"-mouse-inward.png"));
                     }
                     using(var surprise=Render(scene,skin,Pose(),3))using(var surpriseBlink=Render(scene,skin,blink,3))
                         Check(report,Diff(surprise,surpriseBlink,mouth)==0,"automatic blink preserves surprised mouth skin="+skin);

@@ -90,10 +90,11 @@ namespace DieYing
             PointF baseAxis=V.Sub(rest,root), local=V.Sub(point,root);
             float along=V.Dot(local,baseAxis)/V.Dot(baseAxis,baseAxis);
             PointF translation=V.Sub(contact,rest);
-            const float handStart=.52f;
+            const float handStart=.70f;
             if(along>=handStart)return V.Add(point,translation);
             // 鼠标仅有小范围平移。肩点跟随身体，袖口跟随手腕；不旋转掌面或扭曲袖管。
-            float weight=V.Smooth(along/handStart);
+            // 肩头前20%固定，主要在袖管中段过渡，避免泡泡袖随掌心整块挤扁。
+            float weight=V.Smooth((along-.20f)/(handStart-.20f));
             return V.Add(point,V.Lerp(shoulderOffset,translation,weight));
         }
         internal void Draw(MotionState pose,PointF mouseContact,PointF keyContact)

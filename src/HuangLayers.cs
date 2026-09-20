@@ -21,15 +21,8 @@ namespace DieYing
                 return result;
             }
         }
-        private Layer HuangCut(Bitmap b,RectangleF raw,int kind,PointF pivot,GraphicsPath mask=null)
-        {Rectangle r=Rectangle.Ceiling(H(raw));return Cut(b,r,r,kind,H(pivot.X,pivot.Y),mask);}
         private Layer HuangPolygon(Bitmap b,int kind,PointF pivot,params PointF[] raw)
         {for(int i=0;i<raw.Length;i++)raw[i]=H(raw[i].X,raw[i].Y);return OriginalCut(b,kind,H(pivot.X,pivot.Y),raw);}
-        private Layer HuangBrow(Bitmap b,PointF a,PointF b1,PointF c,PointF d)
-        {
-            using(var p=new GraphicsPath())using(var pen=new Pen(Color.Black,7*HuangScale))
-            {p.AddBezier(H(a.X,a.Y),H(b1.X,b1.Y),H(c.X,c.Y),H(d.X,d.Y));p.Widen(pen);Rectangle r=Rectangle.Ceiling(p.GetBounds());return Cut(b,r,r,6,H((a.X+d.X)/2,(a.Y+d.Y)/2),p);}
-        }
         private Costume LoadHuang(string directory,bool stage)
         {
             string name=stage?"stage":"classic";var c=new Costume{yellow=true};
@@ -62,20 +55,9 @@ namespace DieYing
                     }
                     c.eyeCenters[i]=Map(r.X+r.Width/2,r.Y+r.Height*.4f);
                 }
-                if(stage)
-                {
-                    c.brows[0]=HuangBrow(original,new PointF(618,386),new PointF(660,408),new PointF(703,433),new PointF(728,419));
-                    c.brows[1]=HuangBrow(original,new PointF(783,423),new PointF(797,441),new PointF(865,407),new PointF(900,398));
-                    c.arms[0]=HuangPolygon(original,7,new PointF(622,628),new PointF(346,781),new PointF(367,727),new PointF(410,680),new PointF(447,651),new PointF(505,643),new PointF(546,612),new PointF(602,618),new PointF(633,667),new PointF(627,733),new PointF(601,744),new PointF(597,774),new PointF(549,794),new PointF(461,791),new PointF(445,779),new PointF(428,794),new PointF(407,789),new PointF(390,796),new PointF(375,786),new PointF(359,788));
-                    c.arms[1]=HuangPolygon(original,8,new PointF(900,632),new PointF(855,661),new PointF(880,625),new PointF(926,626),new PointF(964,645),new PointF(1013,654),new PointF(1061,680),new PointF(1112,718),new PointF(1158,774),new PointF(1150,788),new PointF(1133,786),new PointF(1117,796),new PointF(1102,787),new PointF(1086,791),new PointF(1062,778),new PointF(1034,793),new PointF(958,795),new PointF(909,779),new PointF(891,731));
-                }
-                else
-                {
-                    c.brows[0]=HuangBrow(original,new PointF(542,393),new PointF(589,409),new PointF(638,437),new PointF(675,421));
-                    c.brows[1]=HuangBrow(original,new PointF(726,420),new PointF(750,444),new PointF(811,404),new PointF(858,388));
-                    c.arms[0]=HuangPolygon(original,7,new PointF(629,614),new PointF(314,822),new PointF(328,774),new PointF(366,714),new PointF(404,675),new PointF(459,635),new PointF(512,610),new PointF(568,597),new PointF(610,605),new PointF(642,641),new PointF(627,694),new PointF(629,732),new PointF(611,752),new PointF(574,770),new PointF(539,785),new PointF(472,788),new PointF(442,772),new PointF(432,795),new PointF(397,800),new PointF(365,817),new PointF(332,823));
-                    c.arms[1]=HuangPolygon(original,8,new PointF(850,613),new PointF(818,733),new PointF(834,651),new PointF(853,610),new PointF(897,607),new PointF(947,627),new PointF(990,650),new PointF(1060,697),new PointF(1134,764),new PointF(1100,773),new PointF(999,752),new PointF(965,775),new PointF(891,782),new PointF(851,773));
-                }
+                LoadCleanHuangParts(c,directory,stage);
+                // 衣襟位于活动肩袖之前，接缝按服装轮廓遮挡，鼠标向内移动不能覆盖胸口。
+                if(!stage)c.chestCover=HuangPolygon(plate,0,PointF.Empty,new PointF(615,594),new PointF(869,600),new PointF(813,741),new PointF(664,741));
                 PointF left=H(stage?522:505,747),right=H(stage?977:918,743);c.arms[0].rest=Map(left.X,left.Y);c.arms[1].rest=Map(right.X,right.Y);
                 RectangleF mouseRaw=stage?new RectangleF(445,762,157,80):new RectangleF(430,757,154,81);
                 RectangleF mr=H(mouseRaw);using(var mask=new GraphicsPath())
@@ -92,9 +74,9 @@ namespace DieYing
                 RectangleF eyeLeft=stage?new RectangleF(543,433,191,109):new RectangleF(485,431,199,103);
                 RectangleF eyeRight=stage?new RectangleF(784,446,207,112):new RectangleF(744,428,204,109);
                 float mouthX=stage?749:708,mouthY=559;
-                using(var eyesMask=new GraphicsPath())using(var faceMask=new GraphicsPath())
+                using(var eyesMask=HuangEyeMask(stage))using(var faceMask=new GraphicsPath())
                 {
-                    eyesMask.AddRectangle(H(eyeLeft));eyesMask.AddRectangle(H(eyeRight));Rectangle eyesBounds=Rectangle.Ceiling(eyesMask.GetBounds());
+                    Rectangle eyesBounds=Rectangle.Ceiling(eyesMask.GetBounds());
                     c.blinkEyes=Cut(closed,eyesBounds,eyesBounds,4,PointF.Empty,eyesMask);
                     faceMask.AddPath(eyesMask,false);faceMask.AddRectangle(H(new RectangleF(mouthX-31,mouthY-18,62,43)));Rectangle faceBounds=Rectangle.Ceiling(faceMask.GetBounds());
                     for(int mood=1;mood<6;mood++)using(var face=(Bitmap)plate.Clone())using(var g=Graphics.FromImage(face))
