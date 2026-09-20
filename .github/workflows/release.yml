@@ -1,0 +1,27 @@
+name: Build Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package
+        shell: pwsh
+        run: ./release.ps1 -Version ($env:GITHUB_REF_NAME.TrimStart('v'))
+      - name: Check update package validation
+        shell: pwsh
+        run: |
+          $result = Start-Process -FilePath ./DieYing.exe -ArgumentList '--update-test', 'checks/update-ci' -Wait -PassThru
+          if ($result.ExitCode -ne 0) { throw 'Update validation failed' }
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $archive = Get-ChildItem dist -Filter DieYing-Windows.zip -Recurse | Select-Object -ExpandProperty FullName
+          $hashes = Get-ChildItem dist -Filter SHA256SUMS.txt -Recurse | Select-Object -ExpandProperty FullName
+          gh release create $env:GITHUB_REF_NAME $archive $hashes --draft --title "蝶应 $env:GITHUB_REF_NAME" --generate-notes

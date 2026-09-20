@@ -1,0 +1,12 @@
+/data/
+/checks/
+/work/
+/design/
+/dist/
+*.exe
+*.zip
+*.log
+*-checks.txt
+ui-checks.txt
+menu-startup-review.png
+settings-open-review.png
