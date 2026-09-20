@@ -31,7 +31,7 @@ namespace DieYing
         {
             if (renderer == null) throw new ArgumentNullException("renderer");
             Report report = new Report();
-            report.Check(renderer.characters.Length == 2, "two-character-forms", "count=" + renderer.characters.Length);
+            report.Check(renderer.SkinCount == 4, "four-costume-forms", "count=" + renderer.SkinCount);
             AuditMotion(renderer.keyboard, report);
             report.Note("本次语义遵循已批准概念稿：14个常用键独立反馈，圆爪只在固定位置小幅轻敲，不承诺逐键触达。鼠标按绝对位置小范围映射。旧104键及长手臂审计已撤销。");
             report.Note("本报告仅检查动作状态与活动范围；圆爪实际覆盖位置、人物还原、透明边缘及完整动态视频仍须独立核对。");

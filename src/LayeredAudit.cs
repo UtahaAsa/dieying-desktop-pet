@@ -15,7 +15,7 @@ namespace DieYing
         internal static string Run(SceneRenderer renderer,string folder)
         {
             StringBuilder report=new StringBuilder("LAYERED RENDER AUDIT\r\n");
-            report.AppendLine("Device="+renderer.characters[0].RendererDevice);
+            report.AppendLine("Device="+renderer.RendererDevice);
             using(Bitmap sheet=new Bitmap(1600,1440))
             using(Graphics gallery=Graphics.FromImage(sheet))
             {
@@ -29,18 +29,23 @@ namespace DieYing
                     using(Bitmap leftBrow=Render(renderer,skin,new MotionState{browLeftRise=-4,browLeftTilt=5}))
                     using(Bitmap rightBrow=Render(renderer,skin,new MotionState{browRightTilt=-6}))
                     {
-                        int inkChanges=InkDifference(neutral,blink,new Rectangle(230,280,330,40));
+                        Rectangle leftBrowArea=skin==0?new Rectangle(280,215,78,25):new Rectangle(319,214,63,27);
+                        Rectangle rightBrowArea=skin==0?new Rectangle(376,214,75,26):new Rectangle(405,217,70,25);
+                        Rectangle eyesArea=skin==0?new Rectangle(253,248,263,59):new Rectangle(315,250,190,55);
+                        Rectangle leftFlowerArea=skin==0?new Rectangle(185,18,195,197):new Rectangle(200,90,114,219);
+                        Rectangle rightFlowerArea=skin==0?new Rectangle(430,18,205,200):new Rectangle(512,120,95,212);
+                        int inkChanges=InkDifference(neutral,blink,leftBrowArea)+InkDifference(neutral,blink,rightBrowArea);
                         Check(report,inkChanges<10,"blink preserves brow ink (ignore small texture sampling differences) "+skin+" changed="+inkChanges);
-                        Check(report,Difference(neutral,leftBrow,new Rectangle(230,275,155,68))>30,"left brow independently translates and rotates "+skin);
-                        Check(report,Difference(neutral,leftBrow,new Rectangle(385,275,175,68))==0,"left brow leaves right brow unchanged "+skin);
-                        Check(report,Difference(neutral,leftBrow,new Rectangle(250,345,290,77))==0,"brow motion leaves eyes unchanged "+skin);
-                        Check(report,Difference(neutral,rightBrow,new Rectangle(385,275,175,68))>30,"right brow independently rotates "+skin);
-                        Check(report,Difference(neutral,flowers,new Rectangle(130,20,570,295))>100,"independent ornament motion "+skin);
-                        Check(report,Difference(neutral,flowers,new Rectangle(240,320,310,130))==0,"ornaments do not move eyes/face "+skin);
-                        Check(report,Difference(neutral,eyes,new Rectangle(250,340,290,77))>100,"eyes move independently "+skin);
-                        Check(report,Difference(neutral,eyes,new Rectangle(130,20,570,295))==0,"eye motion does not move flowers "+skin);
-                        Check(report,Difference(neutral,blink,new Rectangle(250,340,290,77))>100,"blink covers pupils and sparkle "+skin);
-                        Check(report,Difference(neutral,flowers,new Rectangle(180,485,440,170))==0,"ornaments leave hands and desk intact "+skin);
+                        Check(report,Difference(neutral,leftBrow,leftBrowArea)>30,"left brow independently translates and rotates "+skin);
+                        Check(report,Difference(neutral,leftBrow,rightBrowArea)==0,"left brow leaves right brow unchanged "+skin);
+                        Check(report,Difference(neutral,leftBrow,eyesArea)==0,"brow motion leaves eyes unchanged "+skin);
+                        Check(report,Difference(neutral,rightBrow,rightBrowArea)>30,"right brow independently rotates "+skin);
+                        Check(report,Difference(neutral,flowers,leftFlowerArea)>100,"independent ornament motion "+skin);
+                        Check(report,Difference(neutral,flowers,eyesArea)==0,"ornaments do not move eyes/face "+skin);
+                        Check(report,Difference(neutral,eyes,eyesArea)>100,"eyes move independently "+skin);
+                        Check(report,Difference(neutral,eyes,leftFlowerArea)+Difference(neutral,eyes,rightFlowerArea)==0,"eye motion does not move flowers "+skin);
+                        Check(report,Difference(neutral,blink,eyesArea)>100,"blink covers pupils and sparkle "+skin);
+                        Check(report,Difference(neutral,flowers,new Rectangle(180,360,440,165))==0,"ornaments leave hands and desk intact "+skin);
                         Bitmap[] images={neutral,flowers,eyes,blink};
                         for(int i=0;i<images.Length;i++)gallery.DrawImageUnscaled(images[i],(i%2)*800,(skin*2+i/2)*360-180);
                         // 单独保存全尺寸，便于检查花瓣、吊饰和眼睛边缘。
@@ -86,7 +91,7 @@ namespace DieYing
         private static void Check(StringBuilder report,bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);}
 
         /** <summary>以真实渲染器导出 60fps 双衣装演示，输入为预设轨迹，不代表硬件输入测试。ffmpeg 只用于此离线导出。</summary> */
-        internal static void Preview(string folder,string ffmpeg,bool reactions = false)
+        internal static void Preview(string folder,string ffmpeg,bool reactions = false,int firstSkin=0)
         {
             string path=Path.Combine(folder,reactions ? "自动表情预览.mp4" : "分层动态预览.mp4");
             var start=new ProcessStartInfo(ffmpeg,"-hide_banner -loglevel error -y -f rawvideo -pixel_format bgra -video_size 1120x540 -framerate 60 -i pipe:0 -an -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -movflags +faststart \""+path+"\"")
@@ -112,7 +117,7 @@ namespace DieYing
                         g.Clear(Color.FromArgb(250,247,238));
                         for(int skin=0;skin<2;skin++)
                         {
-                            var config=new AppSettings{skin=skin,showKeyBubble=false,expression=t>=7 && t<8 ? 1 : t>=8 && t<9 ? 2 : 0};
+                            var config=new AppSettings{skin=skin+firstSkin,showKeyBubble=false,expression=t>=7 && t<8 ? 1 : t>=8 && t<9 ? 2 : t>=9?3:0};
                             int key=renderer.keyboard.Keys[(index/30)%renderer.keyboard.Keys.Count].id;
                             var input=new InputFrame{cursorX=(float)Math.Sin(t*1.5),cursorY=(float)Math.Sin(t*.85),keySequence=index/30,pressedSinceSnapshot=index%30==0?new int[]{key}:new int[0],leftButton=index%90<9};
                             input.heldKeys[key]=index%30<15;

@@ -156,7 +156,7 @@ namespace DieYing
             return false;
         }
 
-        internal void Draw(Graphics g, bool[] heldKeys, bool showLabels, bool butterfly)
+        internal void Draw(Graphics g, bool[] heldKeys, bool showLabels, bool butterfly, bool red = false)
         {
             if (g == null) throw new ArgumentNullException("g");
             GraphicsState state = g.Save();
@@ -171,7 +171,7 @@ namespace DieYing
                 using (SolidBrush edge = new SolidBrush(Color.FromArgb(210, 160, 84)))
                     g.FillPath(edge, edgePath);
                 using (GraphicsPath boardPath = RoundedPolygon(board, 7))
-                using (LinearGradientBrush boardFill = new LinearGradientBrush(new PointF(0, 538), new PointF(0, 586), Color.FromArgb(255, 235, 177), Color.FromArgb(246, 207, 125)))
+                using (LinearGradientBrush boardFill = new LinearGradientBrush(new PointF(0, 538), new PointF(0, 586), red?Color.FromArgb(130,32,40):Color.FromArgb(255, 235, 177), red?Color.FromArgb(66,23,29):Color.FromArgb(246, 207, 125)))
                 using (Pen outline = new Pen(Color.FromArgb(117, 78, 51), 3))
                 {
                     g.FillPath(boardFill, boardPath);
@@ -182,7 +182,7 @@ namespace DieYing
 
                 using (Font normalFont = new Font("Segoe UI", 7.2f, FontStyle.Bold, GraphicsUnit.Pixel))
                 using (Font smallFont = new Font("Segoe UI", 6.5f, FontStyle.Bold, GraphicsUnit.Pixel))
-                using (SolidBrush letterBrush = new SolidBrush(Color.FromArgb(114, 79, 35)))
+                using (SolidBrush letterBrush = new SolidBrush(red?Color.FromArgb(255,222,162):Color.FromArgb(114, 79, 35)))
                 using (SolidBrush downLetterBrush = new SolidBrush(Color.FromArgb(92, 55, 28)))
                 using (SolidBrush keySide = new SolidBrush(Color.FromArgb(216, 177, 113)))
                 using (Pen border = new Pen(Color.FromArgb(220, 185, 120), 0.85f))
@@ -201,6 +201,7 @@ namespace DieYing
                             g.FillPath(keySide, sidePath);
                         Color topColor = down ? (butterfly ? Color.FromArgb(247, 174, 169) : Color.FromArgb(249, 192, 86)) : Color.FromArgb(255, 249, 224);
                         Color bottomColor = down ? (butterfly ? Color.FromArgb(241, 141, 152) : Color.FromArgb(236, 161, 51)) : Color.FromArgb(249, 232, 189);
+                        if(red){bool accent=cap.id==27||cap.id==13||cap.id==162;topColor=down?Color.FromArgb(230,117,99):accent?Color.FromArgb(165,47,53):Color.FromArgb(64,57,57);bottomColor=down?Color.FromArgb(179,67,66):accent?Color.FromArgb(113,29,37):Color.FromArgb(37,32,34);}
                         float minY = Math.Min(top[2].Y, top[3].Y);
                         float maxY = Math.Max(top[0].Y, top[1].Y);
                         using (GraphicsPath topPath = RoundedPolygon(top, 2.8f))

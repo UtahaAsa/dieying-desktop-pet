@@ -23,6 +23,10 @@ namespace DieYing
                 if (args.Length >= 2)
                 {
                     Directory.CreateDirectory(args[1]);
+                    if (args[0] == "--four-skin-review") { FourSkinAudit.Run(args[1]); return 0; }
+                    if (args[0] == "--zhu-review") { ZhuAudit.Run(args[1]); return 0; }
+                    if (args[0] == "--zhu-preview" && args.Length>=3) { LayeredAudit.Preview(args[1],args[2],false,2);return 0; }
+                    if (args[0] == "--zhu-reactions" && args.Length>=3) { LayeredAudit.Preview(args[1],args[2],true,2);return 0; }
                     if (args[0] == "--update-test") { UpdateAudit.Run(args[1]); return 0; }
                     if (args[0] == "--reaction-preview" && args.Length>=3) { LayeredAudit.Preview(args[1],args[2],true);return 0; }
                     if (args[0] == "--layered-preview" && args.Length>=3) { LayeredAudit.Preview(args[1],args[2]);return 0; }

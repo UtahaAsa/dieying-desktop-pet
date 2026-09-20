@@ -81,13 +81,18 @@ namespace DieYing
         {
             PointF root=Shoulder(mouseHand);
             PointF rest=mouseHand?new PointF(240,548):new PointF(549,548);
+            PointF shoulderOffset=V.Sub(SurfaceRig.Transform(root,pose),root);
+            return TransformBound(point,root,rest,contact,shoulderOffset);
+        }
+        /** <summary>共用肩腕绑定；不同衣装提供原画肩点和手掌中心，掌面只平移。</summary> */
+        internal static PointF TransformBound(PointF point,PointF root,PointF rest,PointF contact,PointF shoulderOffset)
+        {
             PointF baseAxis=V.Sub(rest,root), local=V.Sub(point,root);
             float along=V.Dot(local,baseAxis)/V.Dot(baseAxis,baseAxis);
             PointF translation=V.Sub(contact,rest);
             const float handStart=.52f;
             if(along>=handStart)return V.Add(point,translation);
             // 鼠标仅有小范围平移。肩点跟随身体，袖口跟随手腕；不旋转掌面或扭曲袖管。
-            PointF shoulderOffset=V.Sub(SurfaceRig.Transform(root,pose),root);
             float weight=V.Smooth(along/handStart);
             return V.Add(point,V.Lerp(shoulderOffset,translation,weight));
         }

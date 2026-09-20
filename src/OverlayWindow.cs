@@ -28,7 +28,7 @@ namespace DieYing
         private MenuDismissGuard menuGuard;
         private ToolStripMenuItem startupItem;
         private ToolStripMenuItem pauseItem, throughItem, skinItem, topItem, labelsItem;
-        private readonly ToolStripMenuItem[] skins = new ToolStripMenuItem[2], expressions = new ToolStripMenuItem[5];
+        private readonly ToolStripMenuItem[] skins = new ToolStripMenuItem[SkinCatalog.Count], expressions = new ToolStripMenuItem[5];
         private ToolStripLabel menuHeader;
         private int iconSkin = -1;
         private SettingsWindow settingsWindow;
@@ -128,13 +128,13 @@ namespace DieYing
                 Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(5, 4, 5, 5), ImageScalingSize = new Size(24, 24) };
             menuHeader = new ToolStripLabel("蝶应", TrayArt.Portrait(settings.skin, 48)) { ImageScaling = ToolStripItemImageScaling.None,
                 TextAlign = ContentAlignment.MiddleLeft, ImageAlign = ContentAlignment.MiddleLeft,
-                TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = false, Size = new Size(248, 70), Padding = new Padding(7, 5, 7, 5) };
+                TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, Padding = new Padding(7, 5, 7, 5) };
             menu.Items.Add(menuHeader);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("打开设置…", null, delegate { OpenSettingsFromMenu(); });
             skinItem = new ToolStripMenuItem("衣装");
-            string[] names = { "常服", "打歌服" };
-            for (int i = 0; i < 2; i++)
+            string[] names = SkinCatalog.Names;
+            for (int i = 0; i < SkinCatalog.Count; i++)
             {
                 int skin = i;
                 skins[i] = new ToolStripMenuItem(names[i], TrayArt.Portrait(i, 24), delegate { settings.skin = skin; ApplySettings(true); });
@@ -195,8 +195,8 @@ namespace DieYing
             topItem.Checked = settings.topMost; labelsItem.Checked = settings.keyLabels;
             for (int i = 0; i < skins.Length; i++) skins[i].Checked = settings.skin == i;
             for (int i = 0; i < expressions.Length; i++) expressions[i].Checked = settings.expression == i;
-            skinItem.Text = "衣装 · " + (settings.skin == 0 ? "常服" : "打歌服");
-            if (tray != null) tray.Text = "蝶应 · " + (settings.skin == 0 ? "常服" : "打歌服") + (settings.paused ? " · 已暂停" : "");
+            skinItem.Text = "衣装 · " + SkinCatalog.Name(settings.skin);
+            if (tray != null) tray.Text = "蝶应 · " + SkinCatalog.Name(settings.skin) + (settings.paused ? " · 已暂停" : "");
             if (iconSkin != settings.skin)
             {
                 Icon old = applicationIcon; applicationIcon = TrayArt.MakeIcon(settings.skin); iconSkin = settings.skin;
@@ -205,7 +205,7 @@ namespace DieYing
                 if (old != null) old.Dispose();
                 if (menuHeader != null) { Image previous = menuHeader.Image; menuHeader.Image = TrayArt.Portrait(settings.skin,48); if(previous != null) previous.Dispose(); }
             }
-            if (menuHeader != null) menuHeader.Text = "蝶应\n" + (settings.skin == 0 ? "常服" : "打歌服") + " · " + (settings.paused ? "休息中" : "陪伴中");
+            if (menuHeader != null) menuHeader.Text = "蝶应\n" + SkinCatalog.Name(settings.skin) + " · " + (settings.paused ? "休息中" : "陪伴中");
         }
 
         private void TrayMouseClick(object sender, MouseEventArgs args)
@@ -214,7 +214,7 @@ namespace DieYing
             { trayClickTimer.Stop(); trayClickTimer.Start(); }
         }
 
-        private void SwitchSkin() { settings.skin = 1 - settings.skin; ApplySettings(true); }
+        private void SwitchSkin() { settings.skin = (settings.skin + 1) % SkinCatalog.Count; ApplySettings(true); }
 
         private async void CheckForUpdates(bool manual)
         {
@@ -474,7 +474,7 @@ namespace DieYing
                 report.AppendLine("蝶应 · 透明窗口集成冒烟验证");
                 report.AppendLine("UTC=" + DateTime.UtcNow.ToString("o"));
                 report.AppendLine("Frames=" + frames + "; seconds=" + clock.Elapsed.TotalSeconds.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
-                report.AppendLine("Renderer="+renderer.characters[0].RendererDevice);
+                report.AppendLine("Renderer="+renderer.RendererDevice);
                 report.AppendLine("Frame interval ms median="+Percentile(frameIntervals,.5).ToString("F2")+"; p95="+Percentile(frameIntervals,.95).ToString("F2"));
                 report.AppendLine("Render ms median="+Percentile(renderTimes,.5).ToString("F2")+"; p95="+Percentile(renderTimes,.95).ToString("F2"));
                 report.AppendLine("Stage mean ms scene="+(sceneMs/frames).ToString("F2")+"; scale="+(scaleMs/frames).ToString("F2")+"; present="+(presentMs/frames).ToString("F2"));
@@ -580,19 +580,25 @@ namespace DieYing
         /** <summary>导出菜单与小尺寸图标预览；不打开桌宠主窗、不保存用户设置。</summary> */
         internal void ExportMenuPreview(string folder)
         {
+            int previousSkin=settings.skin;
+            for(int skin=0;skin<SkinCatalog.Count;skin++)
+            {
+            settings.skin=skin;
             RefreshMenu(); menu.CreateControl(); menu.PerformLayout();
             menu.Size = menu.GetPreferredSize(Size.Empty);
             using (Bitmap bitmap = new Bitmap(menu.Width, menu.Height))
             {
                 menu.DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));
-                bitmap.Save(Path.Combine(folder,"tray-menu.png"),ImageFormat.Png);
+                bitmap.Save(Path.Combine(folder,"tray-menu-"+skin+".png"),ImageFormat.Png);
             }
-            using(Bitmap gallery=new Bitmap(640,220))
+            }
+            settings.skin=previousSkin;RefreshMenu();
+            using(Bitmap gallery=new Bitmap(640,430))
             using(Graphics g=Graphics.FromImage(gallery))
             using(Font font=new Font("Segoe UI",9))
             {
                 g.Clear(Color.FromArgb(242,242,242));
-                for(int skin=0;skin<2;skin++)
+                for(int skin=0;skin<SkinCatalog.Count;skin++)
                 {
                     int x=20;
                     foreach(int size in new int[]{16,20,24,32,48,64})

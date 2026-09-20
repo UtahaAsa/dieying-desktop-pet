@@ -160,20 +160,20 @@ namespace DieYing
 
         private void BuildCharacterPage()
         {
-            TableLayoutPanel body = NewPage("和她一起，轻轻敲下常用键", "两套衣装共享键鼠映射与显示设置。切换后立即应用。", "角色");
+            TableLayoutPanel body = NewPage("和她一起，轻轻敲下常用键", "两位角色、四套衣装，共享键鼠与显示设置。", "角色");
             TableLayoutPanel card = Card("选择衣装", "点击下方卡片切换角色形态。");
             TableLayoutPanel choices = new TableLayoutPanel();
             choices.AutoSize = true;
             choices.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             choices.Dock = DockStyle.Top;
             choices.ColumnCount = 2;
-            choices.RowCount = 1;
+            choices.RowCount = 2;
             choices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             choices.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             choices.Margin = new Padding(0, 9, 0, 0);
-            string[] skinNames = { "常服", "打歌服" };
-            string[] skinDetails = { "金色花饰 · 软萌圆手", "蝴蝶裙装 · 软萌圆手" };
-            for (int i = 0; i < 2; ++i)
+            string[] skinNames = SkinCatalog.Names;
+            string[] skinDetails = { "朱慧月的灵魂 · 红橙瞳", "朱慧月的灵魂 · 红橙瞳", "黄玲琳的灵魂 · 金瞳", "黄玲琳的灵魂 · 金瞳" };
+            for (int i = 0; i < SkinCatalog.Count; ++i)
             {
                 int skinIndex = i;
                 Panel tile = new Panel();
@@ -204,7 +204,7 @@ namespace DieYing
                 tile.Controls.Add(picture);
                 tile.Controls.Add(caption);
                 tile.Controls.Add(choose);
-                choices.Controls.Add(tile, i, 0);
+                choices.Controls.Add(tile, i % 2, i / 2);
                 refreshers.Add(delegate
                 {
                     bool active = settings.skin == skinIndex;

@@ -66,7 +66,7 @@ namespace DieYing
         /** <summary>归一化共享设置，允许宿主在应用 UI 或磁盘变更前调用；不读写文件，不改变窗口位置。</summary> */
         internal void Normalize()
         {
-            skin = Math.Max(0, Math.Min(1, skin)); expression = Math.Max(0, Math.Min(4, expression));
+            skin = Math.Max(0, Math.Min(SkinCatalog.Count-1, skin)); expression = Math.Max(0, Math.Min(4, expression));
             size = Math.Max(300, Math.Min(900, size)); frameRate = frameRate <= 30 ? 30 : 60;
             screenIndex = Math.Max(-1, screenIndex);
             mouseRange = Clamp(mouseRange, 0.25f, 1.5f, 1); motionSpeed = Clamp(motionSpeed, 5, 40, 18); opacity = Clamp(opacity, 0.35f, 1, 1);

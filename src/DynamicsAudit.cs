@@ -32,11 +32,11 @@ namespace DieYing
                     using(Bitmap changed=Render(renderer,skin,0,moving))
                     {
                         Check(report,Difference(neutral,changed,new Rectangle(130,70,540,350))>1000,"rendered head changes skin "+skin);
-                        Check(report,Difference(neutral,changed,new Rectangle(220,615,340,24))==0,"rendered desk stable skin "+skin);
+                        Check(report,Difference(neutral,changed,new Rectangle(220,492,340,22))==0,"rendered desk trim stable skin "+skin);
                     }
                     for(int mood=1;mood<5;mood++)
                         using(Bitmap changed=Render(renderer,skin,mood,new MotionState()))
-                            Check(report,Difference(neutral,changed,new Rectangle(250,320,300,130))>60,"visible expression "+skin+"/"+mood);
+                            Check(report,Difference(neutral,changed,new Rectangle(250,235,275,91))>60,"visible expression "+skin+"/"+mood);
                 }
             }
             using(Icon icon=TrayArt.MakeIcon(0)) Check(report,icon.Width==32 && icon.Height==32,"tray icon handle is usable");

@@ -237,11 +237,13 @@ namespace DieYing
     internal sealed class SceneRenderer : IDisposable
     {
         internal readonly KeyboardModel keyboard = new KeyboardModel();
-        internal readonly CharacterModel[] characters;
+        private readonly LayeredCharacterRig characterRig;
+        internal int SkinCount { get { return SkinCatalog.Count; } }
+        internal string RendererDevice { get { return characterRig.Device; } }
         internal bool debugRig;
         internal SceneRenderer(string assetDirectory)
         {
-            characters = new CharacterModel[] { new CharacterModel(assetDirectory, 0), new CharacterModel(assetDirectory, 1) };
+            characterRig=new LayeredCharacterRig(System.IO.Path.Combine(assetDirectory,"zhu"));
         }
         internal void Draw(Graphics g, AppSettings settings, MotionState pose)
         {
@@ -249,10 +251,9 @@ namespace DieYing
             g.PixelOffsetMode = PixelOffsetMode.HighQuality; g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
             GraphicsState scene = g.Save();
             if (settings.mirror) { g.TranslateTransform(800, 0); g.ScaleTransform(-1, 1); }
-            CharacterModel model = characters[settings.skin];
             PointF mouseContact = new PointF(pose.mouseCenter.X, pose.mouseCenter.Y - 8 + pose.mousePress * 1.3f);
             PointF keyContact = new PointF(pose.keyTip.X, pose.keyTip.Y + pose.keyPress * 2);
-            model.DrawScene(g,pose,pose.reaction.expression>=0?pose.reaction.expression:settings.expression,keyboard,settings.keyLabels,mouseContact,keyContact);
+            characterRig.Draw(g,settings.skin,pose,pose.reaction.expression>=0?pose.reaction.expression:settings.expression,keyboard,settings.keyLabels);
             if (debugRig)
             {
                 using (Pen marker = new Pen(Color.Magenta, 1.3f))
@@ -312,6 +313,6 @@ namespace DieYing
             p.AddArc(rect.X, rect.Y, d, d, 180, 90); p.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
             p.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90); p.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90); p.CloseFigure(); return p;
         }
-        public void Dispose() { foreach (var model in characters) model.Dispose(); }
+        public void Dispose() { characterRig.Dispose(); }
     }
 }
