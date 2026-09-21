@@ -23,7 +23,7 @@ namespace DieYing
     {
         internal const string Repository = "UtahaAsa/dieying-desktop-pet";
         internal const string PackageName = "DieYing-Windows.zip";
-        internal const string VersionText = "0.3.1";
+        internal const string VersionText = "0.3.2";
         internal const long MaxPackageBytes = 512L * 1024 * 1024;
         internal static readonly Version CurrentVersion = new Version(VersionText);
 
@@ -53,7 +53,7 @@ namespace DieYing
                     address.Host != "github.com" || !address.AbsolutePath.StartsWith(prefix, StringComparison.Ordinal) ||
                     !address.AbsolutePath.EndsWith("/" + PackageName, StringComparison.Ordinal) ||
                     address.UserInfo.Length != 0 || address.Query.Length != 0)
-                    throw new InvalidDataException("更新包地址不属于蝶应发布仓库。");
+                    throw new InvalidDataException("更新包地址不属于蝶鼠桌宠发布仓库。");
                 object rawDigest;
                 string digest = asset.TryGetValue("digest", out rawDigest) ? rawDigest as string : null;
                 if (digest == null || !Regex.IsMatch(digest, "^sha256:[a-fA-F0-9]{64}$"))

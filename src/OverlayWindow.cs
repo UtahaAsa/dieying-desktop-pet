@@ -53,7 +53,7 @@ namespace DieYing
             settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "settings.ini");
             settings = AppSettings.Load(settingsPath);
             if (!String.IsNullOrEmpty(smokeFolder)) { settings.paused = false; settings.keyboardEnabled = true; settings.mouseEnabled = true; }
-            Text = "蝶应";
+            Text = "蝶鼠桌宠";
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
@@ -68,7 +68,7 @@ namespace DieYing
                 applicationIcon = TrayArt.MakeIcon(settings.skin); iconSkin = settings.skin;
                 Icon = applicationIcon;
                 BuildMenu();
-                tray = new NotifyIcon { Text = "蝶应", Icon = applicationIcon, Visible = true, ContextMenuStrip = menu };
+                tray = new NotifyIcon { Text = "蝶鼠桌宠", Icon = applicationIcon, Visible = true, ContextMenuStrip = menu };
                 tray.MouseClick += TrayMouseClick;
                 tray.MouseDoubleClick += delegate(object sender, MouseEventArgs args)
                 {
@@ -126,7 +126,7 @@ namespace DieYing
         {
             menu = new ContextMenuStrip { Renderer = new ToolStripProfessionalRenderer(new PetMenuColors()) { RoundedEdges = true },
                 Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(5, 4, 5, 5), ImageScalingSize = new Size(24, 24) };
-            menuHeader = new ToolStripLabel("蝶应", TrayArt.Portrait(settings.skin, 48)) { ImageScaling = ToolStripItemImageScaling.None,
+            menuHeader = new ToolStripLabel("蝶鼠桌宠", TrayArt.Portrait(settings.skin, 48)) { ImageScaling = ToolStripItemImageScaling.None,
                 TextAlign = ContentAlignment.MiddleLeft, ImageAlign = ContentAlignment.MiddleLeft,
                 TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, Padding = new Padding(7, 5, 7, 5) };
             menu.Items.Add(menuHeader);
@@ -179,7 +179,7 @@ namespace DieYing
             autoUpdateItem = new ToolStripMenuItem("自动检查更新", null, delegate { settings.autoCheckUpdates = !settings.autoCheckUpdates; SaveSettings(); RefreshMenu(); });
             menu.Items.Add(autoUpdateItem);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("退出蝶应", null, delegate { Close(); });
+            menu.Items.Add("退出蝶鼠桌宠", null, delegate { Close(); });
             foreach (ToolStripItem item in menu.Items) if (item is ToolStripMenuItem) item.Padding = new Padding(4, 5, 10, 5);
             menu.Opening += delegate { RefreshMenu(); };
             menuGuard=new MenuDismissGuard(menu,this);
@@ -196,7 +196,7 @@ namespace DieYing
             for (int i = 0; i < skins.Length; i++) skins[i].Checked = settings.skin == i;
             for (int i = 0; i < expressions.Length; i++) expressions[i].Checked = settings.expression == i;
             skinItem.Text = "衣装 · " + SkinCatalog.Name(settings.skin);
-            if (tray != null) tray.Text = "蝶应 · " + SkinCatalog.Name(settings.skin) + (settings.paused ? " · 已暂停" : "");
+            if (tray != null) tray.Text = "蝶鼠桌宠 · " + SkinCatalog.Name(settings.skin) + (settings.paused ? " · 已暂停" : "");
             if (iconSkin != settings.skin)
             {
                 Icon old = applicationIcon; applicationIcon = TrayArt.MakeIcon(settings.skin); iconSkin = settings.skin;
@@ -205,7 +205,7 @@ namespace DieYing
                 if (old != null) old.Dispose();
                 if (menuHeader != null) { Image previous = menuHeader.Image; menuHeader.Image = TrayArt.Portrait(settings.skin,48); if(previous != null) previous.Dispose(); }
             }
-            if (menuHeader != null) menuHeader.Text = "蝶应\n" + SkinCatalog.Name(settings.skin) + " · " + (settings.paused ? "休息中" : "陪伴中");
+            if (menuHeader != null) menuHeader.Text = "蝶鼠桌宠\n" + SkinCatalog.Name(settings.skin) + " · " + (settings.paused ? "休息中" : "陪伴中");
         }
 
         private void TrayMouseClick(object sender, MouseEventArgs args)
@@ -227,16 +227,16 @@ namespace DieYing
                 if (disposed) return;
                 if (release == null)
                 {
-                    if (manual) MessageBox.Show("当前已是最新版本 " + UpdateService.VersionText, "蝶应更新");
+                    if (manual) MessageBox.Show("当前已是最新版本 " + UpdateService.VersionText, "蝶鼠桌宠更新");
                     return;
                 }
                 if (!manual)
                 {
                     updateItem.Text = "发现新版 " + release.version + "，点击更新…";
-                    tray.ShowBalloonTip(6000, "蝶应有新版本", "右键菜单中点击“检查更新”即可下载安装。", ToolTipIcon.Info);
+                    tray.ShowBalloonTip(6000, "蝶鼠桌宠有新版本", "右键菜单中点击“检查更新”即可下载安装。", ToolTipIcon.Info);
                     return;
                 }
-                if (MessageBox.Show("发现新版 " + release.version + "。\n下载安装后会重启蝶应，原来的设置会保留。", "蝶应更新", MessageBoxButtons.OKCancel) != DialogResult.OK) return;
+                if (MessageBox.Show("发现新版 " + release.version + "。\n下载安装后会重启蝶鼠桌宠，原来的设置会保留。", "蝶鼠桌宠更新", MessageBoxButtons.OKCancel) != DialogResult.OK) return;
                 updateItem.Text = "正在下载安装包…";
                 string stage = await UpdateService.DownloadAsync(release);
                 if (disposed) return;
@@ -245,7 +245,7 @@ namespace DieYing
             }
             catch (Exception error)
             {
-                if (!disposed && manual) MessageBox.Show("更新未完成：" + error.Message + "\n当前版本仍可使用。", "蝶应更新");
+                if (!disposed && manual) MessageBox.Show("更新未完成：" + error.Message + "\n当前版本仍可使用。", "蝶鼠桌宠更新");
             }
             finally
             {
@@ -471,7 +471,7 @@ namespace DieYing
             {
                 uint gdi = Native.GetGuiResources(process.Handle, 0), user = Native.GetGuiResources(process.Handle, 1);
                 long gdiGrowth = (long)gdi - smokeStartGdi, userGrowth = (long)user - smokeStartUser;
-                report.AppendLine("蝶应 · 透明窗口集成冒烟验证");
+                report.AppendLine("蝶鼠桌宠 · 透明窗口集成冒烟验证");
                 report.AppendLine("UTC=" + DateTime.UtcNow.ToString("o"));
                 report.AppendLine("Frames=" + frames + "; seconds=" + clock.Elapsed.TotalSeconds.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
                 report.AppendLine("Renderer="+renderer.RendererDevice);

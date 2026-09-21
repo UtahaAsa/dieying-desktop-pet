@@ -53,7 +53,7 @@ namespace DieYing
 
             internal ProbeForm()
             {
-                Text = "蝶应 · Windows 输入链路检查";
+                Text = "蝶鼠桌宠 · Windows 输入链路检查";
                 ClientSize = new Size(480, 210);
                 StartPosition = FormStartPosition.CenterScreen;
                 FormBorderStyle = FormBorderStyle.FixedSingle;

@@ -10,7 +10,9 @@ namespace DieYing
     internal static class StartupRegistration
     {
         private const string KeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string ApprovalKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
         private const string ValueName = "DieYing.DesktopPet";
+        private static readonly byte[] EnabledApproval = new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         internal static string Command { get { return BuildCommand(Application.ExecutablePath); } }
         internal static string BuildCommand(string path) { return "\"" + Path.GetFullPath(path) + "\""; }
         internal static bool Enabled
@@ -37,11 +39,19 @@ namespace DieYing
                     if(key!=null)Configure(enabled,Command,delegate{return key.GetValue(ValueName) as string;},
                         delegate(string value){key.SetValue(ValueName,value,RegistryValueKind.String);},delegate{key.DeleteValue(ValueName,false);});
                 }
+                using(RegistryKey approval=enabled ? Registry.CurrentUser.CreateSubKey(ApprovalKeyPath) : Registry.CurrentUser.OpenSubKey(ApprovalKeyPath,true))
+                {
+                    if(approval!=null)
+                    {
+                        if(enabled) approval.SetValue(ValueName,EnabledApproval,RegistryValueKind.Binary);
+                        else approval.DeleteValue(ValueName,false);
+                    }
+                }
             }
             catch(Exception error)
             {
                 if(!(error is SecurityException) && !(error is UnauthorizedAccessException) && !(error is IOException))throw;
-                MessageBox.Show("无法修改开机自启："+error.Message,"蝶应",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                MessageBox.Show("无法修改开机自启："+error.Message,"蝶鼠桌宠",MessageBoxButtons.OK,MessageBoxIcon.Information);
             }
         }
         /** <summary>将启动意图应用到指定存储；仅删除指向本程序的条目。传入内存存储可验证行为而不改变系统启动项。</summary> */

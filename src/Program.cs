@@ -54,12 +54,12 @@ namespace DieYing
                 if (args.Length > 0 && args[0] == "--apply-update")
                 {
                     File.WriteAllText(Path.Combine(root, "update-error.txt"), e.ToString(), Encoding.UTF8);
-                    MessageBox.Show("更新没有完成：" + e.Message + "\n旧版本及设置备份保留在更新目录中。", "蝶应更新");
+                    MessageBox.Show("更新没有完成：" + e.Message + "\n旧版本及设置备份保留在更新目录中。", "蝶鼠桌宠更新");
                     return 1;
                 }
                 string errorFolder = args.Length >= 2 ? args[1] : Path.Combine(root, "data");
                 Directory.CreateDirectory(errorFolder); File.WriteAllText(Path.Combine(errorFolder, "last-error.txt"), e.ToString(), Encoding.UTF8);
-                if (args.Length == 0) MessageBox.Show("蝶应未能启动：" + e.Message, "蝶应");
+                if (args.Length == 0) MessageBox.Show("蝶鼠桌宠未能启动：" + e.Message, "蝶鼠桌宠");
                 return 1;
             }
         }

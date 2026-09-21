@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace DieYing
 {
-    /// <summary>蝶应设置窗口；设置变更在 UI 线程同步通知宿主，预览图片由本窗口管理。</summary>
+    /// <summary>蝶鼠桌宠设置窗口；设置变更在 UI 线程同步通知宿主，预览图片由本窗口管理。</summary>
     internal sealed class SettingsWindow : Form
     {
         private static readonly Color Ink = Color.FromArgb(66, 49, 43);
@@ -44,7 +44,7 @@ namespace DieYing
             this.changed = changed;
             this.resetPosition = resetPosition;
             this.previewFactory = previewFactory;
-            Text = "蝶应 · 设置";
+            Text = "蝶鼠桌宠 · 设置";
             Font = MakeFont(9.5f, FontStyle.Regular);
             ForeColor = Ink;
             BackColor = Cream;
@@ -78,7 +78,7 @@ namespace DieYing
             sidebarFlow.Padding = new Padding(18, 30, 18, 0);
             sidebarFlow.BackColor = sidebar.BackColor;
             sidebar.Controls.Add(sidebarFlow);
-            Label logo = LabelOf("蝶应", 25, FontStyle.Bold, Ink);
+            Label logo = LabelOf("蝶鼠桌宠", 25, FontStyle.Bold, Ink);
             logo.Margin = new Padding(5, 0, 0, 0);
             AddRow(sidebarFlow, logo);
             Label tagline = LabelOf("指尖有声，身边有她", 8.5f, FontStyle.Regular, Muted);
@@ -314,7 +314,7 @@ namespace DieYing
             AddToggle(window, "始终置顶", "保持在普通窗口上方。", delegate { return settings.topMost; }, delegate(bool value) { settings.topMost = value; });
             AddToggle(window, "鼠标穿透", "点击会穿过桌宠；请从托盘图标恢复操作。", delegate { return settings.clickThrough; }, delegate(bool value) { settings.clickThrough = value; });
             AddToggle(window, "镜像显示", "翻转整套角色和桌面；默认方向为鼠标在左、键盘在右。", delegate { return settings.mirror; }, delegate(bool value) { settings.mirror = value; });
-            AddToggle(window,"开机自启","登录 Windows 后自动打开蝶应；关闭即可取消。",delegate{return StartupRegistration.Enabled;},delegate(bool value){StartupRegistration.SetEnabled(value);});
+            AddToggle(window,"开机自启","登录 Windows 后自动打开蝶鼠桌宠；关闭即可取消。",delegate{return StartupRegistration.Enabled;},delegate(bool value){StartupRegistration.SetEnabled(value);});
             Button restore = PlainButton("恢复桌宠位置");
             restore.BackColor = Mint;
             restore.Width = 170;
@@ -338,7 +338,7 @@ namespace DieYing
             AddInstruction(basics, "移动桌宠", "关闭鼠标穿透后，按住角色并拖动到喜欢的位置。");
             AddInstruction(basics, "切换衣装", "在“角色”页选择常服或打歌服。");
             AddInstruction(basics, "调整大小", "在“显示”页拖动显示大小滑块，支持 300—900 px。");
-            AddInstruction(basics, "恢复操作", "开启鼠标穿透后，从系统托盘的蝶应图标重新打开设置并关闭穿透。");
+            AddInstruction(basics, "恢复操作", "开启鼠标穿透后，从系统托盘的蝶鼠桌宠图标重新打开设置并关闭穿透。");
             AddInstruction(basics, "退出程序", "在系统托盘菜单选择退出。关闭本设置窗口不会退出桌宠。");
             AddInstruction(basics,"开机自启","在“显示”页或托盘菜单开启；登录当前 Windows 用户后自动启动。移动程序目录后请重新开启。");
             AddRow(body, basics);
