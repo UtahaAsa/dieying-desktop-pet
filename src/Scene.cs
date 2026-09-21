@@ -24,6 +24,9 @@ namespace DieYing
         internal readonly bool[] litKeys = new bool[512];
         internal bool leftButton, rightButton, middleButton;
         internal float wheel;
+        private bool liveActive;
+        private float liveYaw, livePitch, liveRoll;
+        private int liveExpression = -1;
         private PointF start, destination;
         private double moveStart = -1, moveDuration, pressUntil, lastInput, blinkStart = 2.5, previousTime;
         private readonly double[] lightUntil = new double[512];
@@ -55,7 +58,7 @@ namespace DieYing
                 keyboardWasEnabled = settings.keyboardEnabled; return;
             }
             time += dt;
-            int mood=reaction.expression>=0?reaction.expression:settings.expression;
+            int mood=liveActive && liveExpression >= 0 ? liveExpression : reaction.expression>=0?reaction.expression:settings.expression;
             float browAim=mood==3?-3:mood==2?-1.5f:mood==5?1:0;
             float browTilt=mood==5?(settings.skin==0?8:3):mood==4?3:0;
             float browBlend=1-(float)Math.Exp(-dt*8);
@@ -153,17 +156,18 @@ namespace DieYing
             leftButton = settings.mouseEnabled && frame.leftButton; rightButton = settings.mouseEnabled && frame.rightButton; middleButton = settings.mouseEnabled && frame.middleButton;
             mousePress += (((leftButton || rightButton) ? 1 : 0) - mousePress) * Math.Min(1, dt * 35);
             wheel = settings.mouseEnabled ? wheel * (float)Math.Exp(-dt * 9) + frame.wheelDelta / 120f : 0;
-            float follow = settings.mouseEnabled ? V.Clamp(frame.cursorX, -1, 1) : 0;
+            float follow = liveActive ? V.Clamp(liveYaw, -1, 1) : settings.mouseEnabled ? V.Clamp(frame.cursorX, -1, 1) : 0;
+            float verticalFollow = liveActive ? V.Clamp(livePitch, -1, 1) : settings.mouseEnabled ? V.Clamp(frame.cursorY, -1, 1) : 0;
             idleWeight = settings.idleMotion ? 1 : 0;
             eyeX += (follow * 3.2f - eyeX) * (1 - (float)Math.Exp(-dt * 9));
-            eyeY += ((settings.mouseEnabled ? V.Clamp(frame.cursorY,-1,1) * 1.7f : 0) - eyeY) * (1 - (float)Math.Exp(-dt * 9));
+            eyeY += (verticalFollow * 1.7f - eyeY) * (1 - (float)Math.Exp(-dt * 9));
             float torsoAim = follow * 8;
             leanX += (torsoAim - leanX) * (1 - (float)Math.Exp(-dt * 6));
             sleepBreath = (float)Math.Sin(time * 1.15);
             float breathe = Sleeping ? sleepBreath : settings.idleMotion ? (float)Math.Sin(time * 1.65) : 0;
-            float yAim = breathe * (Sleeping ? 4.2f : 2.8f) + (settings.mouseEnabled ? frame.cursorY * 2.4f : 0) + keyPress * 1.4f;
+            float yAim = breathe * (Sleeping ? 4.2f : 2.8f) + verticalFollow * 2.4f + keyPress * 1.4f;
             leanY += (yAim - leanY) * (1 - (float)Math.Exp(-dt * 7));
-            float tiltAim = Sleeping ? 1.8f + sleepBreath * .5f : follow * 1.8f + (settings.idleMotion ? (float)Math.Sin(time * .85) * .6f : 0);
+            float tiltAim = Sleeping ? 1.8f + sleepBreath * .5f : (liveActive ? liveRoll * 8 + follow * 1.8f : follow * 1.8f) + (settings.idleMotion ? (float)Math.Sin(time * .85) * .6f : 0);
             headTilt += (tiltAim - headTilt) * (1 - (float)Math.Exp(-dt * 5));
             float tiltSpeed = (headTilt - previousTilt) / dt; previousTilt = headTilt;
             Spring(ref flowerLeft, ref flowerVelocityLeft, -tiltSpeed * .75f + idleWeight * (float)Math.Sin(time * 2.2) * 2.4f, dt);
@@ -171,9 +175,9 @@ namespace DieYing
             hairSwing += ((-leanX * .7f + (settings.idleMotion ? (float)Math.Sin(time * 1.65 - .65) * 4 : 0)) - hairSwing) * (1 - (float)Math.Exp(-dt * 3));
             hairLift = breathe * 1.5f;
             if (now - blinkStart > .17) blinkStart = now + 3.1 + .7 * Math.Sin(now * .31);
-            blink = settings.expression == 1 || settings.idleMotion && now >= blinkStart && now < blinkStart + .17;
+            blink = mood == 1 || settings.idleMotion && now >= blinkStart && now < blinkStart + .17;
             float blinkPhase = (float)((now - blinkStart) / .17);
-            blinkAmount = settings.expression == 1 ? 1 : blink && blinkPhase >= 0 && blinkPhase <= 1 ? (float)Math.Sin(blinkPhase * Math.PI) : 0;
+            blinkAmount = mood == 1 ? 1 : blink && blinkPhase >= 0 && blinkPhase <= 1 ? (float)Math.Sin(blinkPhase * Math.PI) : 0;
             bubble = settings.showKeyBubble ? frame.bubble : "";
             Array.Clear(litKeys, 0, litKeys.Length);
             if (settings.keyboardEnabled)
@@ -183,6 +187,13 @@ namespace DieYing
                     KeyCap cap = keyboard.Find(i);
                     if (cap != null) { litKeys[i] = true; litKeys[cap.id] = true; }
                 }
+        }
+
+        internal void SetLivePose(LivePose pose)
+        {
+            liveActive = pose != null && pose.valid;
+            if (!liveActive) { liveExpression = -1; liveYaw = livePitch = liveRoll = 0; return; }
+            liveYaw = pose.yaw; livePitch = pose.pitch; liveRoll = pose.roll; liveExpression = pose.expression;
         }
 
         private static void Spring(ref float angle, ref float velocity, float target, float dt)
