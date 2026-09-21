@@ -21,6 +21,8 @@ namespace DieYing
                     digest = "sha256:" + new string('a',64) } }
             });
             Check(UpdateService.ParseRelease(json).version == new Version(1,0,0), "release-parse", log);
+            string legacyJson = json.Replace(UpdateService.PackageName, UpdateService.LegacyPackageName);
+            Check(UpdateService.ParseRelease(legacyJson).version == new Version(1,0,0), "legacy-package-parse", log);
             Check(UpdateService.ParseRelease(json.Replace("v1.0.0", "v0.1.0")) == null, "ignore-downgrade", log);
             Check(UpdateService.ParseRelease(json.Replace("\"draft\":false", "\"draft\":true")) == null, "ignore-draft", log);
             Reject(delegate { UpdateService.ParseRelease(json.Replace("github.com/", "github.com.evil.example/")); }, "reject-other-host", log);

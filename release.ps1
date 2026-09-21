@@ -28,6 +28,10 @@ foreach($relative in $assetFiles)
 [IO.File]::WriteAllText((Join-Path $payload 'version.txt'), $Version, [Text.UTF8Encoding]::new($false))
 $archive = Join-Path $releaseRoot 'DieShuDesktopPet-Windows.zip'
 Compress-Archive -Path (Join-Path $payload '*') -DestinationPath $archive
+$legacyArchive = Join-Path $releaseRoot 'DieYing-Windows.zip'
+Copy-Item -LiteralPath $archive -Destination $legacyArchive
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-[IO.File]::WriteAllText((Join-Path $releaseRoot 'SHA256SUMS.txt'), ($hash + '  DieShuDesktopPet-Windows.zip'), [Text.UTF8Encoding]::new($false))
+$legacyHash = (Get-FileHash -LiteralPath $legacyArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+$sumText = $hash + '  DieShuDesktopPet-Windows.zip' + [Environment]::NewLine + $legacyHash + '  DieYing-Windows.zip'
+[IO.File]::WriteAllText((Join-Path $releaseRoot 'SHA256SUMS.txt'), $sumText, [Text.UTF8Encoding]::new($false))
 Write-Output $releaseRoot

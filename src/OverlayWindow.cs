@@ -227,7 +227,7 @@ namespace DieYing
                 if (disposed) return;
                 if (release == null)
                 {
-                    if (manual) MessageBox.Show("当前已是最新版本 " + UpdateService.VersionText, "蝶鼠桌宠更新");
+                    if (manual) ShowUpdateMessage("当前已是最新版本 " + UpdateService.VersionText, MessageBoxButtons.OK);
                     return;
                 }
                 if (!manual)
@@ -236,7 +236,7 @@ namespace DieYing
                     tray.ShowBalloonTip(6000, "蝶鼠桌宠有新版本", "右键菜单中点击“检查更新”即可下载安装。", ToolTipIcon.Info);
                     return;
                 }
-                if (MessageBox.Show("发现新版 " + release.version + "。\n下载安装后会重启蝶鼠桌宠，原来的设置会保留。", "蝶鼠桌宠更新", MessageBoxButtons.OKCancel) != DialogResult.OK) return;
+                if (ShowUpdateMessage("发现新版 " + release.version + "。\n下载安装后会重启蝶鼠桌宠，原来的设置会保留。", MessageBoxButtons.OKCancel) != DialogResult.OK) return;
                 updateItem.Text = "正在下载安装包…";
                 string stage = await UpdateService.DownloadAsync(release);
                 if (disposed) return;
@@ -245,13 +245,19 @@ namespace DieYing
             }
             catch (Exception error)
             {
-                if (!disposed && manual) MessageBox.Show("更新未完成：" + error.Message + "\n当前版本仍可使用。", "蝶鼠桌宠更新");
+                if (!disposed && manual) ShowUpdateMessage("更新未完成：" + error.Message + "\n当前版本仍可使用。", MessageBoxButtons.OK);
             }
             finally
             {
                 checkingUpdate = false;
                 if (!disposed) { updateItem.Enabled = true; if (!updateItem.Text.StartsWith("发现新版")) updateItem.Text = "检查更新…"; }
             }
+        }
+
+        private DialogResult ShowUpdateMessage(string text, MessageBoxButtons buttons)
+        {
+            if (IsHandleCreated) Native.SetForegroundWindow(Handle);
+            return MessageBox.Show(this, text, "蝶鼠桌宠更新", buttons, MessageBoxIcon.Information);
         }
 
         private void OpenSettingsFromMenu()
