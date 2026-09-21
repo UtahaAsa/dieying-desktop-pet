@@ -9,7 +9,7 @@ namespace DieYing
     internal sealed class AppSettings
     {
         internal int skin = 1, expression, size = 480, posX = int.MinValue, posY = int.MinValue, screenIndex = -1, frameRate = 60;
-        internal bool keyboardEnabled = true, mouseEnabled = true, showKeyBubble = true, topMost = true, clickThrough, paused, mirror, idleMotion = true, keyLabels, liveEnabled;
+        internal bool keyboardEnabled = true, mouseEnabled = true, showKeyBubble = true, topMost = true, clickThrough, paused, mirror, idleMotion = true, keyLabels;
         internal float opacity = 1, mouseRange = 1, motionSpeed = 18;
         internal bool autoCheckUpdates = true;
         internal string hotkeySettings = "", hotkeyPause = "", hotkeyTopMost = "", hotkeyClickThrough = "", hotkeyUpdate = "", hotkeyResetPosition = "";

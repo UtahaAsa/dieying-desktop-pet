@@ -24,7 +24,7 @@ namespace DieYing
         internal const string Repository = "UtahaAsa/dieying-desktop-pet";
         internal const string PackageName = "DieShuDesktopPet-Windows.zip";
         internal const string LegacyPackageName = "DieYing-Windows.zip";
-        internal const string VersionText = "0.3.7";
+        internal const string VersionText = "0.3.8";
         internal const long MaxPackageBytes = 512L * 1024 * 1024;
         internal static readonly Version CurrentVersion = new Version(VersionText);
 

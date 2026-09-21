@@ -21,7 +21,6 @@ namespace DieYing
         private SceneRenderer renderer;
         private MotionState motion = new MotionState();
         private InputSource input;
-        private LiveTracking liveTracking;
         private Bitmap sceneBitmap;
         private Icon applicationIcon;
         private NotifyIcon tray;
@@ -36,7 +35,7 @@ namespace DieYing
         private SettingsWindow settingsWindow;
         private bool settingsOpenPending;
         private bool checkingUpdate;
-        private ToolStripMenuItem updateItem, autoUpdateItem, liveItem;
+        private ToolStripMenuItem updateItem, autoUpdateItem;
         private bool initialized, disposed, painting, dragging, applying, lastPaused, lastKeyboard, lastMouse;
         private readonly HashSet<int> registeredHotkeys = new HashSet<int>();
         private Point dragCursor, dragOrigin;
@@ -71,7 +70,6 @@ namespace DieYing
                 applicationIcon = TrayArt.MakeIcon(settings.skin); iconSkin = settings.skin;
                 Icon = applicationIcon;
                 BuildMenu();
-                liveTracking = new LiveTracking();
                 tray = new NotifyIcon { Text = "蝶鼠桌宠", Icon = applicationIcon, Visible = true, ContextMenuStrip = menu };
                 tray.MouseClick += TrayMouseClick;
                 tray.MouseDoubleClick += delegate(object sender, MouseEventArgs args)
@@ -86,7 +84,6 @@ namespace DieYing
                 if (settings.posX == Int32.MinValue || settings.posY == Int32.MinValue) ResetPositionCore();
                 else Location = ClampLocation(new Point(settings.posX, settings.posY), Size);
                 initialized = true;
-                if (settings.liveEnabled) StartLive();
             }
             catch { Dispose(); throw; }
         }
@@ -159,8 +156,6 @@ namespace DieYing
             }
             menu.Items.Add(expressionItem);
             menu.Items.Add(new ToolStripSeparator());
-            liveItem = new ToolStripMenuItem("摄像头 Live", null, delegate { settings.liveEnabled = !settings.liveEnabled; if (settings.liveEnabled) StartLive(); else StopLive(); ApplySettings(true); });
-            menu.Items.Add(liveItem);
             pauseItem = new ToolStripMenuItem("暂停动作", null, delegate { settings.paused = !settings.paused; ApplySettings(true); });
             menu.Items.Add(pauseItem);
             throughItem = new ToolStripMenuItem("鼠标穿透", null, delegate { settings.clickThrough = !settings.clickThrough; ApplySettings(true); });
@@ -198,8 +193,6 @@ namespace DieYing
         private void RefreshMenu()
         {
             pauseItem.Checked = settings.paused;
-            liveItem.Checked = settings.liveEnabled;
-            liveItem.Text = settings.liveEnabled ? "摄像头 Live · " + (liveTracking == null ? "启动中" : liveTracking.Status) : "摄像头 Live";
             startupItem.Checked=StartupRegistration.Enabled;
             autoUpdateItem.Checked = settings.autoCheckUpdates;
             pauseItem.Text = settings.paused ? "继续陪伴" : "暂停动作";
@@ -366,21 +359,6 @@ namespace DieYing
             finally { applying = false; }
         }
 
-        private void StartLive()
-        {
-            if (liveTracking == null) liveTracking = new LiveTracking();
-            string script = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "live_tracker.py");
-            if (!liveTracking.Start(script)) settings.liveEnabled = false;
-            RefreshMenu();
-        }
-
-        private void StopLive()
-        {
-            if (liveTracking != null) liveTracking.Stop();
-            motion.SetLivePose(null);
-            RefreshMenu();
-        }
-
         private void RefreshHotkeys()
         {
             foreach (int id in registeredHotkeys) Native.UnregisterHotKey(Handle, id);
@@ -456,7 +434,6 @@ namespace DieYing
                 lastFrameTime = now;
                 InputFrame frame = input.Snapshot(MappingBounds(), now, settings.keyboardEnabled && !settings.paused, settings.mouseEnabled && !settings.paused);
                 if (!String.IsNullOrEmpty(smokeFolder)) frame = SmokeFrame(now);
-                motion.SetLivePose(settings.liveEnabled && !settings.paused && liveTracking != null ? liveTracking.Snapshot() : null);
                 motion.Update(frame, settings, renderer.keyboard, now);
                 if (motion.reaction.returnedToNatural)
                 {
@@ -691,7 +668,6 @@ namespace DieYing
                 if(menuGuard!=null){menuGuard.Dispose();menuGuard=null;}
                 if (menu != null) { foreach (ToolStripMenuItem item in skins) if (item != null && item.Image != null) item.Image.Dispose(); if(menuHeader != null && menuHeader.Image != null) menuHeader.Image.Dispose(); if (menuRenderer != null && menuRenderer.EdgeMascot != null) menuRenderer.EdgeMascot.Dispose(); Font font = menu.Font; menu.Dispose(); font.Dispose(); menu = null; menuRenderer = null; }
                 if (input != null) { input.Dispose(); input = null; }
-                if (liveTracking != null) { liveTracking.Dispose(); liveTracking = null; }
                 if (renderer != null) { renderer.Dispose(); renderer = null; }
                 if (sceneBitmap != null) { sceneBitmap.Dispose(); sceneBitmap = null; }
                 if (applicationIcon != null) { applicationIcon.Dispose(); applicationIcon = null; }

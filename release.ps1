@@ -8,7 +8,6 @@ $releaseRoot = Join-Path $PSScriptRoot ('dist\' + $Version + '-' + [guid]::NewGu
 $payload = Join-Path $releaseRoot 'package'
 New-Item -ItemType Directory -Path $payload -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'DieYing.exe') -Destination $payload
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'live_tracker.py') -Destination $payload
 $assetFiles = @(
     'app.ico',
     'approved/animation-parts.png', 'approved/butterfly-open.png', 'approved/classic-open.png', 'approved/paws-mouse.png',
