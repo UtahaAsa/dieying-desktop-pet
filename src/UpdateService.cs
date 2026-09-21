@@ -22,8 +22,9 @@ namespace DieYing
     internal static class UpdateService
     {
         internal const string Repository = "UtahaAsa/dieying-desktop-pet";
-        internal const string PackageName = "DieYing-Windows.zip";
-        internal const string VersionText = "0.3.2";
+        internal const string PackageName = "DieShuDesktopPet-Windows.zip";
+        internal const string LegacyPackageName = "DieYing-Windows.zip";
+        internal const string VersionText = "0.3.3";
         internal const long MaxPackageBytes = 512L * 1024 * 1024;
         internal static readonly Version CurrentVersion = new Version(VersionText);
 
@@ -45,13 +46,14 @@ namespace DieYing
             if (assets == null) throw new InvalidDataException("新版没有可用的安装包。");
             foreach (Dictionary<string, object> asset in assets)
             {
-                if ((string)asset["name"] != PackageName) continue;
+                string packageName = (string)asset["name"];
+                if (packageName != PackageName && packageName != LegacyPackageName) continue;
                 string url = (string)asset["browser_download_url"];
                 Uri address;
                 string prefix = "/" + Repository + "/releases/download/";
                 if (!Uri.TryCreate(url, UriKind.Absolute, out address) || address.Scheme != "https" ||
                     address.Host != "github.com" || !address.AbsolutePath.StartsWith(prefix, StringComparison.Ordinal) ||
-                    !address.AbsolutePath.EndsWith("/" + PackageName, StringComparison.Ordinal) ||
+                    !address.AbsolutePath.EndsWith("/" + packageName, StringComparison.Ordinal) ||
                     address.UserInfo.Length != 0 || address.Query.Length != 0)
                     throw new InvalidDataException("更新包地址不属于蝶鼠桌宠发布仓库。");
                 object rawDigest;

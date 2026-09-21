@@ -10,7 +10,7 @@ Windows 桌面上的 Q 版互动伙伴，支持键鼠互动、衣装切换、表
 
 ## 使用
 
-从 Releases 下载 `DieYing-Windows.zip`，完整解压到可写目录后运行 `DieYing.exe`。请保留同目录的 `assets`，不要仅发送 exe。发布包只包含运行所需的素材，不包含旧版素材目录、源码、备份及测试产物。设置保存在程序目录的 `data/settings.ini`。
+从 Releases 下载 `DieShuDesktopPet-Windows.zip`，完整解压到可写目录后运行 `DieYing.exe`。请保留同目录的 `assets`，不要仅发送 exe。发布包只包含运行所需的素材，不包含旧版素材目录、源码、备份及测试产物。设置保存在程序目录的 `data/settings.ini`。
 
 右键打开菜单；可调整衣装、表情、大小、鼠标穿透等。键盘手只做轻微敲击，鼠标手跟随鼠标移动。连续快速输入会触发表情，闲置时会打瞌睡。
 
