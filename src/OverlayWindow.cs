@@ -125,13 +125,15 @@ namespace DieYing
         private void BuildMenu()
         {
             menu = new ContextMenuStrip { Renderer = new ToolStripProfessionalRenderer(new PetMenuColors()) { RoundedEdges = true },
-                Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(5, 4, 5, 5), ImageScalingSize = new Size(24, 24) };
+                Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(7, 6, 7, 7), ImageScalingSize = new Size(24, 24), ShowImageMargin = true, ShowCheckMargin = true };
             menuHeader = new ToolStripLabel("蝶鼠桌宠", TrayArt.Portrait(settings.skin, 48)) { ImageScaling = ToolStripItemImageScaling.None,
                 TextAlign = ContentAlignment.MiddleLeft, ImageAlign = ContentAlignment.MiddleLeft,
                 TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, Padding = new Padding(7, 5, 7, 5) };
             menu.Items.Add(menuHeader);
             menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(MenuSection("快速入口"));
             menu.Items.Add("打开设置…", null, delegate { OpenSettingsFromMenu(); });
+            menu.Items.Add(MenuSection("角色状态"));
             skinItem = new ToolStripMenuItem("衣装");
             string[] names = SkinCatalog.Names;
             for (int i = 0; i < SkinCatalog.Count; i++)
@@ -151,6 +153,7 @@ namespace DieYing
             }
             menu.Items.Add(expressionItem);
             menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(MenuSection("互动与显示"));
             pauseItem = new ToolStripMenuItem("暂停动作", null, delegate { settings.paused = !settings.paused; ApplySettings(true); });
             menu.Items.Add(pauseItem);
             throughItem = new ToolStripMenuItem("鼠标穿透", null, delegate { settings.clickThrough = !settings.clickThrough; ApplySettings(true); });
@@ -174,15 +177,21 @@ namespace DieYing
             });
             menu.Items.Add(startupItem);
             menu.Items.Add("恢复位置", null, delegate { ResetPositionCore(); ApplySettings(true); });
+            menu.Items.Add(MenuSection("程序管理"));
             updateItem = new ToolStripMenuItem("检查更新…", null, delegate { BeginInvoke((MethodInvoker)delegate { CheckForUpdates(true); }); });
             menu.Items.Add(updateItem);
             autoUpdateItem = new ToolStripMenuItem("自动检查更新", null, delegate { settings.autoCheckUpdates = !settings.autoCheckUpdates; SaveSettings(); RefreshMenu(); });
             menu.Items.Add(autoUpdateItem);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("退出蝶鼠桌宠", null, delegate { Close(); });
-            foreach (ToolStripItem item in menu.Items) if (item is ToolStripMenuItem) item.Padding = new Padding(4, 5, 10, 5);
+            foreach (ToolStripItem item in menu.Items) if (item is ToolStripMenuItem) item.Padding = new Padding(6, 6, 12, 6);
             menu.Opening += delegate { RefreshMenu(); };
             menuGuard=new MenuDismissGuard(menu,this);
+        }
+
+        private ToolStripLabel MenuSection(string text)
+        {
+            return new ToolStripLabel(text) { ForeColor = Color.FromArgb(150, 119, 88), Font = menu.Font, Padding = new Padding(8, 7, 8, 2), Enabled = false };
         }
 
         private void RefreshMenu()
@@ -286,7 +295,7 @@ namespace DieYing
             if (disposed) return;
             if (settingsWindow == null || settingsWindow.IsDisposed)
             {
-                settingsWindow = new SettingsWindow(settings, delegate { ApplySettings(true); }, ResetPositionCore, CreatePreview);
+                settingsWindow = new SettingsWindow(settings, delegate { ApplySettings(true); }, ResetPositionCore, CreatePreview, delegate { CheckForUpdates(true); });
                 settingsWindow.Icon = applicationIcon;
                 settingsWindow.TopMost = settings.topMost;
                 settingsWindow.FormClosed += delegate { settingsWindow = null; };

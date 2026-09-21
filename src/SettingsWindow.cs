@@ -18,6 +18,7 @@ namespace DieYing
         private readonly AppSettings settings;
         private readonly Action changed;
         private readonly Action resetPosition;
+        private readonly Action checkForUpdates;
         private readonly Func<int, Bitmap> previewFactory;
         private readonly List<Action> refreshers = new List<Action>();
         private readonly List<Font> ownedFonts = new List<Font>();
@@ -37,13 +38,14 @@ namespace DieYing
         /// <param name="changed">每次编辑后的应用与保存回调。</param>
         /// <param name="resetPosition">将桌宠移回可见位置的回调。</param>
         /// <param name="previewFactory">按形态索引生成预览；返回的图片所有权交给窗口。</param>
-        internal SettingsWindow(AppSettings settings, Action changed, Action resetPosition, Func<int, Bitmap> previewFactory)
+        internal SettingsWindow(AppSettings settings, Action changed, Action resetPosition, Func<int, Bitmap> previewFactory, Action checkForUpdates)
         {
             if (settings == null) throw new ArgumentNullException("settings");
             this.settings = settings;
             this.changed = changed;
             this.resetPosition = resetPosition;
             this.previewFactory = previewFactory;
+            this.checkForUpdates = checkForUpdates;
             Text = "蝶鼠桌宠 · 设置";
             Font = MakeFont(9.5f, FontStyle.Regular);
             ForeColor = Ink;
@@ -85,7 +87,7 @@ namespace DieYing
             tagline.Margin = new Padding(7, 2, 0, 30);
             AddRow(sidebarFlow, tagline);
 
-            string[] names = { "角色", "键鼠", "动作", "显示", "使用说明" };
+            string[] names = { "角色", "键鼠", "动作", "显示", "使用说明", "更新与关于" };
             for (int i = 0; i < names.Length; ++i)
             {
                 int pageIndex = i;
@@ -137,6 +139,7 @@ namespace DieYing
                 BuildMotionPage();
                 BuildDisplayPage();
                 BuildHelpPage();
+                BuildAboutPage();
                 SelectPage(0);
                 RefreshValues();
             }
@@ -349,6 +352,27 @@ namespace DieYing
             TableLayoutPanel local = Card("本地运行", null);
             AddHint(local, "只响应当前键鼠状态，不记录输入文本，也不上传键鼠数据。设置保存在程序所在工作目录，不会为你添加开机启动或修改系统设置。");
             AddRow(body, local);
+        }
+
+        private void BuildAboutPage()
+        {
+            TableLayoutPanel body = NewPage("蝶鼠桌宠，保持最新", "查看当前版本、检查更新，并管理后台更新提示。", "更新与关于");
+            TableLayoutPanel update = Card("版本与更新", "更新只替换程序文件，已有角色、位置和偏好设置会保留。");
+            AddInstruction(update, "当前版本", "v" + UpdateService.VersionText);
+            AddToggle(update, "自动检查更新", "启动时检查 GitHub 正式版；发现新版本后由你确认下载。", delegate { return settings.autoCheckUpdates; }, delegate(bool value) { settings.autoCheckUpdates = value; });
+            Button check = PlainButton("检查更新");
+            check.Height = 39;
+            check.Anchor = AnchorStyles.Left;
+            check.Margin = new Padding(0, 13, 0, 0);
+            check.Click += delegate { if (checkForUpdates != null) checkForUpdates(); };
+            AddRow(update, check);
+            AddHint(update, "如果更新提示被其他窗口遮挡，程序会把提示窗口带到前台。下载失败时当前版本仍可继续使用。");
+            AddRow(body, update);
+
+            TableLayoutPanel info = Card("程序信息", null);
+            AddInstruction(info, "应用名称", "蝶鼠桌宠");
+            AddInstruction(info, "项目主页", "dieying-desktop-pet");
+            AddRow(body, info);
         }
 
         private TableLayoutPanel NewPage(string title, string subtitle, string accessibleName)
