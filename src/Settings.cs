@@ -12,6 +12,7 @@ namespace DieYing
         internal bool keyboardEnabled = true, mouseEnabled = true, showKeyBubble = true, topMost = true, clickThrough, paused, mirror, idleMotion = true, keyLabels;
         internal float opacity = 1, mouseRange = 1, motionSpeed = 18;
         internal bool autoCheckUpdates = true;
+        internal string hotkeySettings = "", hotkeyPause = "", hotkeyTopMost = "", hotkeyClickThrough = "", hotkeyUpdate = "", hotkeyResetPosition = "";
 
         /** <summary>读取本地设置；未知或格式错误的条目忽略，数值边界统一归一化。文件系统错误交由宿主处理。</summary> */
         internal static AppSettings Load(string path)
@@ -32,6 +33,7 @@ namespace DieYing
                 if (field.FieldType == typeof(int) && Int32.TryParse(serialized, NumberStyles.Integer, CultureInfo.InvariantCulture, out integer)) field.SetValue(value, integer);
                 else if (field.FieldType == typeof(bool) && Boolean.TryParse(serialized, out boolean)) field.SetValue(value, boolean);
                 else if (field.FieldType == typeof(float) && Single.TryParse(serialized, NumberStyles.Float, CultureInfo.InvariantCulture, out number)) field.SetValue(value, number);
+                else if (field.FieldType == typeof(string)) field.SetValue(value, serialized);
             }
             value.Normalize();
             return value;
@@ -70,7 +72,11 @@ namespace DieYing
             size = Math.Max(300, Math.Min(900, size)); frameRate = frameRate <= 30 ? 30 : 60;
             screenIndex = Math.Max(-1, screenIndex);
             mouseRange = Clamp(mouseRange, 0.25f, 1.5f, 1); motionSpeed = Clamp(motionSpeed, 5, 40, 18); opacity = Clamp(opacity, 0.35f, 1, 1);
+            hotkeySettings = CleanHotkey(hotkeySettings); hotkeyPause = CleanHotkey(hotkeyPause); hotkeyTopMost = CleanHotkey(hotkeyTopMost);
+            hotkeyClickThrough = CleanHotkey(hotkeyClickThrough); hotkeyUpdate = CleanHotkey(hotkeyUpdate); hotkeyResetPosition = CleanHotkey(hotkeyResetPosition);
         }
+
+        private static string CleanHotkey(string value) { return value == null ? "" : value.Trim(); }
 
         private static float Clamp(float value, float min, float max, float fallback)
         {

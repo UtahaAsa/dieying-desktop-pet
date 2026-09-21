@@ -101,15 +101,17 @@ namespace DieYing
 
             MotionState unknown = new MotionState(); unknown.Update(Frame(0, 0, 0, new int[0], new int[0]), settings, keyboard, 0);
             InputFrame unknownFrame = Frame(1, 112, 112, new int[] { 112 }, new int[] { 112 }); unknownFrame.bubble = "F1";
-            bool unknownStill = keyboard.Find(112) == null, bubbleVisible = false;
+            bool unknownStill = keyboard.Find(112) == null, unknownActed = false, unknownLit = false, bubbleVisible = false;
+            int unknownAction = keyboard.ResolveActionKey(112);
             for (int step = 1; step <= 90; step++)
             {
                 unknown.Update(unknownFrame, settings, keyboard, step / 120.0); unknownFrame.pressedSinceSnapshot = new int[0];
-                unknownStill &= unknown.keyPress < .001 && Distance(unknown.keyTip, new PointF(549, 547)) < .001;
-                foreach (KeyCap cap in keyboard.Keys) unknownStill &= !unknown.litKeys[cap.id];
+                unknownActed |= unknown.keyPress > .001 || unknown.targetKey == unknownAction;
+                unknownStill &= Distance(unknown.keyTip, new PointF(549, 547)) < 30;
+                unknownLit |= unknown.litKeys[unknownAction];
                 bubbleVisible |= unknown.bubble == "F1";
             }
-            report.Check(unknownStill && bubbleVisible, "keyboard.unlisted-key-bubble-only", "F1仅显示气泡，不驱动圆爪、不伪装成已有键帽");
+            report.Check(unknownStill && unknownActed && unknownLit && bubbleVisible, "keyboard.unlisted-key-taps", "F1等未单独绘制键帽的按键也会触发圆爪动作，并保留气泡提示");
 
             foreach (int fps in new int[] { 30, 60, 120 })
             {

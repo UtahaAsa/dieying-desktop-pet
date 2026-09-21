@@ -82,20 +82,24 @@ namespace DieYing
                     // 相同键的真实 down/up/down 仍保留，不能按键号去重而吞掉双击。
                     foreach (int key in frame.pressedSinceSnapshot)
                     {
-                        KeyCap cap = keyboard.Find(key);
-                        if (cap == null) continue;
-                        lightUntil[cap.id] = now + .13;
+                        int actionKey = keyboard.ResolveActionKey(key);
+                        if (actionKey == 0) continue;
+                        lightUntil[actionKey] = now + .13;
                         if (pendingStrikes.Count >= MaxPendingStrikes) pendingStrikes.Dequeue();
-                        pendingStrikes.Enqueue(new PendingStrike(cap.id, now)); any = true;
+                        pendingStrikes.Enqueue(new PendingStrike(actionKey, now)); any = true;
                     }
                 }
-                else if (sequence >= 0 && keyboard.Find(frame.lastPressedKey) != null)
+                else if (sequence >= 0)
                 {
                     // 兼容未提供边沿数组的调用方；正常 Raw Input 路径始终使用上面的数组。
+                    int actionKey = keyboard.ResolveActionKey(frame.lastPressedKey);
+                    if (actionKey == 0) { sequence = frame.keySequence; }
+                    else
+                    {
                     if (pendingStrikes.Count >= MaxPendingStrikes) pendingStrikes.Dequeue();
-                    int capId = keyboard.Find(frame.lastPressedKey).id;
-                    pendingStrikes.Enqueue(new PendingStrike(capId, now));
-                    lightUntil[capId] = now + .13; any = true;
+                    pendingStrikes.Enqueue(new PendingStrike(actionKey, now));
+                    lightUntil[actionKey] = now + .13; any = true;
+                    }
                 }
                 sequence = frame.keySequence;
                 if (any) lastInput = now;
@@ -191,21 +195,22 @@ namespace DieYing
 
         private static bool IsHeld(InputFrame frame, KeyboardModel keyboard, int key)
         {
-            if (key <= 0 || keyboard.Find(key) == null) return false;
-            int wanted = keyboard.Find(key).id;
+            if (key <= 0) return false;
+            int wanted = keyboard.ResolveActionKey(key);
             for (int i = 1; i < frame.heldKeys.Length; i++)
             {
                 if (!frame.heldKeys[i]) continue;
-                KeyCap cap = keyboard.Find(i); if (cap != null && cap.id == wanted) return true;
+                if (keyboard.ResolveActionKey(i) == wanted) return true;
             }
             return false;
         }
         private int FindHeldTarget(InputFrame frame, KeyboardModel keyboard)
         {
-            KeyCap latest = keyboard.Find(frame.targetKey);
-            if (latest != null && IsHeld(frame, keyboard, latest.id)) return latest.id;
+            int latest = keyboard.ResolveActionKey(frame.targetKey);
+            if (latest != 0 && IsHeld(frame, keyboard, latest)) return latest;
             if (IsHeld(frame, keyboard, targetKey)) return targetKey;
-            foreach (KeyCap cap in keyboard.Keys) if (IsHeld(frame, keyboard, cap.id)) return cap.id;
+            for (int key = 1; key < frame.heldKeys.Length; key++)
+                if (frame.heldKeys[key]) return keyboard.ResolveActionKey(key);
             return 0;
         }
         private static PointF Home() { return new PointF(549, 547); }

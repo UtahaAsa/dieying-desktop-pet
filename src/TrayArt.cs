@@ -46,6 +46,52 @@ namespace DieYing
                 return result;
             }
         }
+
+        internal static Bitmap MenuDecoration(int skin, int frame)
+        {
+            Bitmap result = new Bitmap(88, 50, PixelFormat.Format32bppArgb);
+            using (Bitmap portrait = Portrait(skin, 42))
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                using (Brush shadow = new SolidBrush(Color.FromArgb(35, 177, 137, 89)))
+                    g.FillEllipse(shadow, 4, 37, 45, 8);
+                GraphicsState state = g.Save();
+                g.TranslateTransform(26, 28);
+                // 菜单展开时像小人趴在菜单边缘，第二帧微微抬头形成轻量动态。
+                g.RotateTransform(frame == 0 ? -78f : -62f);
+                g.DrawImage(portrait, -21, -21, 42, 42);
+                g.Restore(state);
+                using (Pen gold = new Pen(Color.FromArgb(224, 177, 91), 1.4f))
+                using (Brush cream = new SolidBrush(Color.FromArgb(248, 214, 135)))
+                {
+                    float y = frame == 0 ? 12 : 9;
+                    g.DrawLine(gold, 61, y - 4, 61, y + 4);
+                    g.DrawLine(gold, 57, y, 65, y);
+                    g.FillEllipse(cream, 73, frame == 0 ? 18 : 15, 4, 4);
+                    g.FillEllipse(cream, 80, frame == 0 ? 10 : 13, 3, 3);
+                }
+            }
+            return result;
+        }
+
+        internal static Bitmap EdgeMascot(int skin, int frame)
+        {
+            Bitmap result = new Bitmap(42, 46, PixelFormat.Format32bppArgb);
+            using (Bitmap portrait = Portrait(skin, 42))
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                GraphicsState state = g.Save();
+                g.TranslateTransform(21, 23);
+                g.RotateTransform(frame == 0 ? 8f : -3f);
+                g.DrawImage(portrait, -21, -21, 42, 42);
+                g.Restore(state);
+            }
+            return result;
+        }
         internal static Icon MakeIcon(int skin)
         {
             using (Bitmap image = Portrait(skin, 32))
@@ -97,6 +143,82 @@ namespace DieYing
         public override Color CheckBackground { get { return Color.FromArgb(204, 230, 215); } }
         public override Color CheckSelectedBackground { get { return CheckBackground; } }
         public override Color CheckPressedBackground { get { return CheckBackground; } }
+    }
+
+    internal sealed class PetMenuRenderer : ToolStripProfessionalRenderer
+    {
+        internal Image EdgeMascot { get; set; }
+
+        internal PetMenuRenderer() : base(new PetMenuColors())
+        {
+            RoundedEdges = true;
+        }
+
+        protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
+        {
+            // 勾选状态由 OnRenderItemText 绘制，禁止 WinForms 默认的方框背景。
+        }
+
+        protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+        {
+            Rectangle area = e.ArrowRectangle;
+            int size = 17;
+            Rectangle bubble = new Rectangle(area.Left + (area.Width - size) / 2, area.Top + (area.Height - size) / 2, size, size);
+            using (Brush bubbleBrush = new SolidBrush(e.Item.Selected ? Color.FromArgb(211, 145, 145) : Color.FromArgb(226, 176, 157)))
+            using (Brush arrowBrush = new SolidBrush(Color.FromArgb(255, 249, 237)))
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.FillEllipse(bubbleBrush, bubble);
+                using (GraphicsPath arrow = new GraphicsPath())
+                {
+                    arrow.AddBezier(bubble.Left + 6, bubble.Top + 4, bubble.Left + 10, bubble.Top + 5, bubble.Left + 11, bubble.Top + 7, bubble.Left + 12, bubble.Top + 8);
+                    arrow.AddBezier(bubble.Left + 12, bubble.Top + 8, bubble.Left + 10, bubble.Top + 10, bubble.Left + 8, bubble.Top + 12, bubble.Left + 6, bubble.Top + 13);
+                    arrow.AddBezier(bubble.Left + 7, bubble.Top + 10, bubble.Left + 7, bubble.Top + 8, bubble.Left + 7, bubble.Top + 6, bubble.Left + 6, bubble.Top + 4);
+                    arrow.CloseFigure();
+                    e.Graphics.FillPath(arrowBrush, arrow);
+                }
+            }
+        }
+
+        protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+        {
+            base.OnRenderItemText(e);
+            ToolStripMenuItem item = e.Item as ToolStripMenuItem;
+            if (item == null || !item.Checked) return;
+            Rectangle box = new Rectangle(e.TextRectangle.Left - 29, e.TextRectangle.Top + (e.TextRectangle.Height - 17) / 2, 17, 17);
+            using (Brush fill = new SolidBrush(Color.FromArgb(190, 224, 204)))
+            using (Pen border = new Pen(Color.FromArgb(111, 169, 137), 1f))
+            using (Pen check = new Pen(Color.FromArgb(63, 117, 82), 1.8f))
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.FillEllipse(fill, box);
+                e.Graphics.DrawEllipse(border, box);
+                check.StartCap = LineCap.Round;
+                check.EndCap = LineCap.Round;
+                e.Graphics.DrawLines(check, new Point[] { new Point(box.Left + 4, box.Top + 8), new Point(box.Left + 7, box.Top + 11), new Point(box.Right - 4, box.Top + 5) });
+            }
+        }
+
+        protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
+        {
+            base.OnRenderToolStripBackground(e);
+            ContextMenuStrip context = e.ToolStrip as ContextMenuStrip;
+            if (context == null || EdgeMascot == null) return;
+            int x = context.Width - 22;
+            e.Graphics.DrawImage(EdgeMascot, new Rectangle(x, 7, EdgeMascot.Width, EdgeMascot.Height));
+        }
+
+        private static GraphicsPath Rounded(Rectangle rectangle, int radius)
+        {
+            GraphicsPath path = new GraphicsPath();
+            int diameter = radius * 2;
+            path.AddArc(rectangle.Left, rectangle.Top, diameter, diameter, 180, 90);
+            path.AddArc(rectangle.Right - diameter, rectangle.Top, diameter, diameter, 270, 90);
+            path.AddArc(rectangle.Right - diameter, rectangle.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(rectangle.Left, rectangle.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
     }
 
 }

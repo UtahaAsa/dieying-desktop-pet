@@ -30,12 +30,16 @@ namespace DieYing
         private ToolStripMenuItem pauseItem, throughItem, skinItem, topItem, labelsItem;
         private readonly ToolStripMenuItem[] skins = new ToolStripMenuItem[SkinCatalog.Count], expressions = new ToolStripMenuItem[5];
         private ToolStripLabel menuHeader;
+        private PetMenuRenderer menuRenderer;
+        private Timer menuEffectTimer;
+        private int menuEffectFrame;
         private int iconSkin = -1;
         private SettingsWindow settingsWindow;
         private bool settingsOpenPending;
         private bool checkingUpdate;
         private ToolStripMenuItem updateItem, autoUpdateItem;
         private bool initialized, disposed, painting, dragging, applying, lastPaused, lastKeyboard, lastMouse;
+        private readonly HashSet<int> registeredHotkeys = new HashSet<int>();
         private Point dragCursor, dragOrigin;
         private int frames, smokePhase = -1, smokeStartHandles;
         private uint smokeStartGdi, smokeStartUser, smokePeakGdi, smokePeakUser;
@@ -113,6 +117,7 @@ namespace DieYing
         {
             if (message.Msg == 0x0021) { message.Result = new IntPtr(3); return; } // MA_NOACTIVATE
             if (message.Msg == 0x0084 && settings != null && settings.clickThrough) { message.Result = new IntPtr(-1); return; }
+            if (message.Msg == 0x0312) { HandleHotkey(message.WParam.ToInt32()); return; }
             base.WndProc(ref message);
             if (message.Msg == 0x007E && initialized) // 显示器增减、分辨率或布局变化。
             {
@@ -124,16 +129,16 @@ namespace DieYing
 
         private void BuildMenu()
         {
-            menu = new ContextMenuStrip { Renderer = new ToolStripProfessionalRenderer(new PetMenuColors()) { RoundedEdges = true },
-                Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(7, 6, 7, 7), ImageScalingSize = new Size(24, 24), ShowImageMargin = true, ShowCheckMargin = true };
-            menuHeader = new ToolStripLabel("蝶鼠桌宠", TrayArt.Portrait(settings.skin, 48)) { ImageScaling = ToolStripItemImageScaling.None,
+            menuRenderer = new PetMenuRenderer();
+            menu = new ContextMenuStrip { Renderer = menuRenderer,
+                Font = new Font("Microsoft YaHei UI", 9.5f), ForeColor = Color.FromArgb(87, 66, 54), Padding = new Padding(7, 6, 7, 7), ImageScalingSize = new Size(24, 24), ShowImageMargin = true, ShowCheckMargin = false };
+            menuHeader = new ToolStripLabel("蝶鼠桌宠", TrayArt.MenuDecoration(settings.skin, 0)) { ImageScaling = ToolStripItemImageScaling.None,
                 TextAlign = ContentAlignment.MiddleLeft, ImageAlign = ContentAlignment.MiddleLeft,
-                TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, Padding = new Padding(7, 5, 7, 5) };
+                TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, Padding = new Padding(5, 5, 9, 5) };
+            menuRenderer.EdgeMascot = TrayArt.EdgeMascot(settings.skin, 0);
             menu.Items.Add(menuHeader);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(MenuSection("快速入口"));
             menu.Items.Add("打开设置…", null, delegate { OpenSettingsFromMenu(); });
-            menu.Items.Add(MenuSection("角色状态"));
             skinItem = new ToolStripMenuItem("衣装");
             string[] names = SkinCatalog.Names;
             for (int i = 0; i < SkinCatalog.Count; i++)
@@ -153,7 +158,6 @@ namespace DieYing
             }
             menu.Items.Add(expressionItem);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(MenuSection("互动与显示"));
             pauseItem = new ToolStripMenuItem("暂停动作", null, delegate { settings.paused = !settings.paused; ApplySettings(true); });
             menu.Items.Add(pauseItem);
             throughItem = new ToolStripMenuItem("鼠标穿透", null, delegate { settings.clickThrough = !settings.clickThrough; ApplySettings(true); });
@@ -177,7 +181,6 @@ namespace DieYing
             });
             menu.Items.Add(startupItem);
             menu.Items.Add("恢复位置", null, delegate { ResetPositionCore(); ApplySettings(true); });
-            menu.Items.Add(MenuSection("程序管理"));
             updateItem = new ToolStripMenuItem("检查更新…", null, delegate { BeginInvoke((MethodInvoker)delegate { CheckForUpdates(true); }); });
             menu.Items.Add(updateItem);
             autoUpdateItem = new ToolStripMenuItem("自动检查更新", null, delegate { settings.autoCheckUpdates = !settings.autoCheckUpdates; SaveSettings(); RefreshMenu(); });
@@ -185,13 +188,21 @@ namespace DieYing
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("退出蝶鼠桌宠", null, delegate { Close(); });
             foreach (ToolStripItem item in menu.Items) if (item is ToolStripMenuItem) item.Padding = new Padding(6, 6, 12, 6);
-            menu.Opening += delegate { RefreshMenu(); };
+            menuEffectTimer = new Timer { Interval = 240 };
+            menuEffectTimer.Tick += delegate
+            {
+                menuEffectFrame = 1 - menuEffectFrame;
+                Image previous = menuHeader.Image;
+                menuHeader.Image = TrayArt.MenuDecoration(settings.skin, menuEffectFrame);
+                if (previous != null) previous.Dispose();
+                previous = menuRenderer.EdgeMascot;
+                menuRenderer.EdgeMascot = TrayArt.EdgeMascot(settings.skin, menuEffectFrame);
+                if (previous != null) previous.Dispose();
+                menu.Invalidate();
+            };
+            menu.Opening += delegate { RefreshMenu(); menuEffectFrame = 0; menuEffectTimer.Start(); };
+            menu.Closed += delegate { menuEffectTimer.Stop(); menuEffectFrame = 0; };
             menuGuard=new MenuDismissGuard(menu,this);
-        }
-
-        private ToolStripLabel MenuSection(string text)
-        {
-            return new ToolStripLabel(text) { ForeColor = Color.FromArgb(150, 119, 88), Font = menu.Font, Padding = new Padding(8, 7, 8, 2), Enabled = false };
         }
 
         private void RefreshMenu()
@@ -212,7 +223,8 @@ namespace DieYing
                 Icon = applicationIcon; if (tray != null) tray.Icon = applicationIcon;
                 if (settingsWindow != null && !settingsWindow.IsDisposed) settingsWindow.Icon = applicationIcon;
                 if (old != null) old.Dispose();
-                if (menuHeader != null) { Image previous = menuHeader.Image; menuHeader.Image = TrayArt.Portrait(settings.skin,48); if(previous != null) previous.Dispose(); }
+                if (menuHeader != null) { Image previous = menuHeader.Image; menuHeader.Image = TrayArt.MenuDecoration(settings.skin, menuEffectFrame); if(previous != null) previous.Dispose(); }
+                if (menuRenderer != null) { Image previous = menuRenderer.EdgeMascot; menuRenderer.EdgeMascot = TrayArt.EdgeMascot(settings.skin, menuEffectFrame); if (previous != null) previous.Dispose(); }
             }
             if (menuHeader != null) menuHeader.Text = "蝶鼠桌宠\n" + SkinCatalog.Name(settings.skin) + " · " + (settings.paused ? "休息中" : "陪伴中");
         }
@@ -348,6 +360,7 @@ namespace DieYing
                 {
                     Native.SetClickThrough(Handle, settings.clickThrough);
                     Native.SetTopMost(Handle, settings.topMost);
+                    RefreshHotkeys();
                 }
                 if (settingsWindow != null && !settingsWindow.IsDisposed)
                 {
@@ -359,6 +372,38 @@ namespace DieYing
                 if (Visible && !painting) RenderFrame();
             }
             finally { applying = false; }
+        }
+
+        private void RefreshHotkeys()
+        {
+            foreach (int id in registeredHotkeys) Native.UnregisterHotKey(Handle, id);
+            registeredHotkeys.Clear();
+            RegisterHotkey(1, settings.hotkeySettings);
+            RegisterHotkey(2, settings.hotkeyPause);
+            RegisterHotkey(3, settings.hotkeyTopMost);
+            RegisterHotkey(4, settings.hotkeyClickThrough);
+            RegisterHotkey(5, settings.hotkeyUpdate);
+            RegisterHotkey(6, settings.hotkeyResetPosition);
+        }
+
+        private void RegisterHotkey(int id, string text)
+        {
+            uint modifiers, key;
+            if (!HotkeyFormat.TryParse(text, out modifiers, out key)) return;
+            if (Native.RegisterHotKey(Handle, id, modifiers, key)) registeredHotkeys.Add(id);
+        }
+
+        private void HandleHotkey(int id)
+        {
+            switch (id)
+            {
+                case 1: OpenSettings(); break;
+                case 2: settings.paused = !settings.paused; ApplySettings(true); break;
+                case 3: settings.topMost = !settings.topMost; ApplySettings(true); break;
+                case 4: settings.clickThrough = !settings.clickThrough; ApplySettings(true); break;
+                case 5: BeginInvoke((MethodInvoker)delegate { CheckForUpdates(true); }); break;
+                case 6: ResetPositionCore(); ApplySettings(true); break;
+            }
         }
 
         private void SetDisplaySize(bool preserveBottomRight)
@@ -636,11 +681,13 @@ namespace DieYing
                 if (settingsWindow != null && !settingsWindow.IsDisposed) settingsWindow.Close();
                 if (tray != null) { tray.Visible = false; tray.Dispose(); tray = null; }
                 if(menuGuard!=null){menuGuard.Dispose();menuGuard=null;}
-                if (menu != null) { foreach (ToolStripMenuItem item in skins) if (item != null && item.Image != null) item.Image.Dispose(); if(menuHeader != null && menuHeader.Image != null) menuHeader.Image.Dispose(); Font font = menu.Font; menu.Dispose(); font.Dispose(); menu = null; }
+                if (menuEffectTimer != null) { menuEffectTimer.Stop(); menuEffectTimer.Dispose(); menuEffectTimer = null; }
+                if (menu != null) { foreach (ToolStripMenuItem item in skins) if (item != null && item.Image != null) item.Image.Dispose(); if(menuHeader != null && menuHeader.Image != null) menuHeader.Image.Dispose(); if (menuRenderer != null && menuRenderer.EdgeMascot != null) menuRenderer.EdgeMascot.Dispose(); Font font = menu.Font; menu.Dispose(); font.Dispose(); menu = null; menuRenderer = null; }
                 if (input != null) { input.Dispose(); input = null; }
                 if (renderer != null) { renderer.Dispose(); renderer = null; }
                 if (sceneBitmap != null) { sceneBitmap.Dispose(); sceneBitmap = null; }
                 if (applicationIcon != null) { applicationIcon.Dispose(); applicationIcon = null; }
+                if (IsHandleCreated) foreach (int id in registeredHotkeys) Native.UnregisterHotKey(Handle, id);
             }
             base.Dispose(disposing);
         }

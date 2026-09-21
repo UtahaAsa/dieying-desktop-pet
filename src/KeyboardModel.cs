@@ -49,6 +49,17 @@ namespace DieYing
             return byId.TryGetValue(keyId, out cap) ? cap : null;
         }
 
+        /// <summary>将未单独绘制键帽的物理按键分配到一个可见键位，确保每个按键都能触发手部动作。</summary>
+        internal int ResolveActionKey(int keyId)
+        {
+            if (keyId <= 0) return 0;
+            KeyCap cap = Find(keyId);
+            if (cap != null) return cap.id;
+            if (keys.Count == 0) return 0;
+            int index = keyId == Int32.MinValue ? 0 : Math.Abs(keyId) % keys.Count;
+            return keys[index].id;
+        }
+
         /// <summary>返回键帽表面的手部目标点；未知键号不得静默映射至其它键。</summary>
         internal PointF GetTarget(int keyId)
         {
@@ -306,6 +317,8 @@ namespace DieYing
                 throw new InvalidOperationException("空输入状态处理错误。");
             if (model.Find(-1) != null || model.Find(270) != null || model.Find(112) != null || model.Find(74) != null)
                 throw new InvalidOperationException("未知键号查找行为错误。");
+            if (model.ResolveActionKey(112) == 0 || model.Find(model.ResolveActionKey(112)) == null)
+                throw new InvalidOperationException("未知键号未分配可见动作目标。");
             bool rejected = false;
             try { model.GetTarget(112); } catch (ArgumentOutOfRangeException) { rejected = true; }
             if (!rejected) throw new InvalidOperationException("未知键号未明确拒绝。");

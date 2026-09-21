@@ -235,10 +235,18 @@ namespace DieYing
         private void BuildInputPage()
         {
             TableLayoutPanel body = NewPage("让动作跟随你的输入", "14 个常用键独立响应，圆手轻按键盘；鼠标位置来自所选屏幕。", "键鼠");
-            TableLayoutPanel keyboard = Card("常用键响应", "同时按下多个常用键时，对应键帽分别反馈，圆手随着输入轻轻按动。");
-            AddToggle(keyboard, "响应键盘", "开启圆手轻按和常用键的独立按压反馈。", delegate { return settings.keyboardEnabled; }, delegate(bool value) { settings.keyboardEnabled = value; });
+            TableLayoutPanel keyboard = Card("键盘响应", "所有键盘按键都会触发圆手动作；画面中的14个键帽仍提供独立反馈。");
+            AddToggle(keyboard, "响应键盘", "开启所有按键的圆手轻按与可见键帽反馈。", delegate { return settings.keyboardEnabled; }, delegate(bool value) { settings.keyboardEnabled = value; });
             AddToggle(keyboard, "按键气泡", "在角色旁显示当前按键提示。", delegate { return settings.showKeyBubble; }, delegate(bool value) { settings.showKeyBubble = value; });
             AddToggle(keyboard, "键帽文字", "为常用键显示标记；默认隐藏，保持画面简洁。", delegate { return settings.keyLabels; }, delegate(bool value) { settings.keyLabels = value; });
+            TableLayoutPanel shortcuts = Card("快捷键配置", "点击输入框后按下组合键；留空表示不注册该快捷键。至少需要包含 Ctrl、Alt、Shift 或 Win 之一。");
+            AddHotkey(shortcuts, "打开设置", delegate { return settings.hotkeySettings; }, delegate(string value) { settings.hotkeySettings = value; });
+            AddHotkey(shortcuts, "暂停 / 继续", delegate { return settings.hotkeyPause; }, delegate(string value) { settings.hotkeyPause = value; });
+            AddHotkey(shortcuts, "保持置顶", delegate { return settings.hotkeyTopMost; }, delegate(string value) { settings.hotkeyTopMost = value; });
+            AddHotkey(shortcuts, "鼠标穿透", delegate { return settings.hotkeyClickThrough; }, delegate(string value) { settings.hotkeyClickThrough = value; });
+            AddHotkey(shortcuts, "检查更新", delegate { return settings.hotkeyUpdate; }, delegate(string value) { settings.hotkeyUpdate = value; });
+            AddHotkey(shortcuts, "恢复位置", delegate { return settings.hotkeyResetPosition; }, delegate(string value) { settings.hotkeyResetPosition = value; });
+            AddRow(body, shortcuts);
             AddRow(body, keyboard);
 
             TableLayoutPanel mouse = Card("鼠标映射", "鼠标和圆手在垫面上小幅共同移动。停止移动后，会停留在映射位置。");
@@ -525,6 +533,30 @@ namespace DieYing
             name.Margin = new Padding(0, 9, 0, 2);
             AddRow(card, name);
             AddHint(card, text);
+        }
+
+        private void AddHotkey(TableLayoutPanel card, string title, Func<string> get, Action<string> set)
+        {
+            TableLayoutPanel row = new TableLayoutPanel();
+            row.Dock = DockStyle.Top; row.AutoSize = true; row.ColumnCount = 2;
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+            row.Margin = new Padding(0, 5, 0, 5);
+            Label name = LabelOf(title, 9.5f, FontStyle.Bold, Ink);
+            name.Anchor = AnchorStyles.Left; row.Controls.Add(name, 0, 0);
+            TextBox box = new TextBox();
+            box.ReadOnly = true; box.Height = 29; box.Dock = DockStyle.Top;
+            box.BackColor = Color.White; box.ForeColor = Ink; box.BorderStyle = BorderStyle.FixedSingle;
+            box.TextAlign = HorizontalAlignment.Center; box.AccessibleName = title + "快捷键";
+            box.KeyDown += delegate(object sender, KeyEventArgs args)
+            {
+                if (args.KeyCode == Keys.Back || args.KeyCode == Keys.Delete) { set(""); ApplyChange(); args.SuppressKeyPress = true; args.Handled = true; return; }
+                string text;
+                if (HotkeyFormat.TryFormat(args.KeyData, out text)) { set(text); ApplyChange(); args.SuppressKeyPress = true; args.Handled = true; }
+            };
+            refreshers.Add(delegate { box.Text = get() ?? ""; });
+            row.Controls.Add(box, 1, 0);
+            AddRow(card, row);
         }
 
         private ComboBox ChoiceBox()
