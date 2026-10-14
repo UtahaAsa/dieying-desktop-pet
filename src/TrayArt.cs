@@ -129,18 +129,35 @@ namespace DieYing
         }
     }
 
+    /** <summary>菜单与设置共用的颜色。只读值可跨线程读取，不持有绘图资源。</summary> */
+    internal static class PetUiTheme
+    {
+        internal static readonly Color Ink = Color.FromArgb(66, 49, 43);
+        internal static readonly Color Muted = Color.FromArgb(119, 104, 91);
+        internal static readonly Color Cream = Color.FromArgb(250, 247, 239);
+        internal static readonly Color Surface = Color.FromArgb(255, 253, 248);
+        internal static readonly Color Sidebar = Color.FromArgb(243, 237, 225);
+        internal static readonly Color Gold = Color.FromArgb(234, 193, 83);
+        internal static readonly Color Hover = Color.FromArgb(247, 237, 214);
+        internal static readonly Color Selected = Color.FromArgb(247, 226, 166);
+        internal static readonly Color Mint = Color.FromArgb(216, 238, 226);
+        internal static readonly Color Success = Color.FromArgb(63, 117, 82);
+        internal static readonly Color Line = Color.FromArgb(229, 220, 201);
+        internal static readonly Color Focus = Color.FromArgb(145, 104, 40);
+    }
+
     internal sealed class PetMenuColors : ProfessionalColorTable
     {
-        public override Color ToolStripDropDownBackground { get { return Color.FromArgb(255, 251, 241); } }
+        public override Color ToolStripDropDownBackground { get { return PetUiTheme.Surface; } }
         public override Color ImageMarginGradientBegin { get { return ToolStripDropDownBackground; } }
         public override Color ImageMarginGradientMiddle { get { return ToolStripDropDownBackground; } }
         public override Color ImageMarginGradientEnd { get { return ToolStripDropDownBackground; } }
-        public override Color MenuItemSelected { get { return Color.FromArgb(248, 230, 184); } }
-        public override Color MenuItemBorder { get { return Color.FromArgb(226, 192, 126); } }
-        public override Color MenuBorder { get { return Color.FromArgb(215, 187, 142); } }
-        public override Color SeparatorDark { get { return Color.FromArgb(234, 219, 190); } }
+        public override Color MenuItemSelected { get { return PetUiTheme.Hover; } }
+        public override Color MenuItemBorder { get { return PetUiTheme.Line; } }
+        public override Color MenuBorder { get { return PetUiTheme.Line; } }
+        public override Color SeparatorDark { get { return PetUiTheme.Line; } }
         public override Color SeparatorLight { get { return ToolStripDropDownBackground; } }
-        public override Color CheckBackground { get { return Color.FromArgb(204, 230, 215); } }
+        public override Color CheckBackground { get { return PetUiTheme.Mint; } }
         public override Color CheckSelectedBackground { get { return CheckBackground; } }
         public override Color CheckPressedBackground { get { return CheckBackground; } }
     }
@@ -156,47 +173,51 @@ namespace DieYing
 
         protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
         {
-            // 勾选状态由 OnRenderItemText 绘制，禁止 WinForms 默认的方框背景。
+            float scale = e.Graphics.DpiX / 96f;
+            float size = Math.Min(16 * scale, Math.Min(e.ImageRectangle.Width, e.ImageRectangle.Height));
+            RectangleF box = new RectangleF(e.ImageRectangle.Left + (e.ImageRectangle.Width - size) / 2,
+                e.ImageRectangle.Top + (e.ImageRectangle.Height - size) / 2, size, size);
+            GraphicsState state = e.Graphics.Save();
+            try
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (Brush fill = new SolidBrush(PetUiTheme.Success)) e.Graphics.FillEllipse(fill, box);
+                using (Pen check = new Pen(Color.White, 1.6f * scale))
+                {
+                    check.StartCap = LineCap.Round; check.EndCap = LineCap.Round;
+                    e.Graphics.DrawLines(check, new PointF[] {
+                        new PointF(box.Left + size * .25f, box.Top + size * .5f),
+                        new PointF(box.Left + size * .43f, box.Top + size * .68f),
+                        new PointF(box.Left + size * .76f, box.Top + size * .33f) });
+                }
+            }
+            finally { e.Graphics.Restore(state); }
         }
 
         protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
         {
-            Rectangle area = e.ArrowRectangle;
-            int size = 17;
-            Rectangle bubble = new Rectangle(area.Left + (area.Width - size) / 2, area.Top + (area.Height - size) / 2, size, size);
-            using (Brush bubbleBrush = new SolidBrush(e.Item.Selected ? Color.FromArgb(211, 145, 145) : Color.FromArgb(226, 176, 157)))
-            using (Brush arrowBrush = new SolidBrush(Color.FromArgb(255, 249, 237)))
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                e.Graphics.FillEllipse(bubbleBrush, bubble);
-                using (GraphicsPath arrow = new GraphicsPath())
-                {
-                    arrow.AddBezier(bubble.Left + 6, bubble.Top + 4, bubble.Left + 10, bubble.Top + 5, bubble.Left + 11, bubble.Top + 7, bubble.Left + 12, bubble.Top + 8);
-                    arrow.AddBezier(bubble.Left + 12, bubble.Top + 8, bubble.Left + 10, bubble.Top + 10, bubble.Left + 8, bubble.Top + 12, bubble.Left + 6, bubble.Top + 13);
-                    arrow.AddBezier(bubble.Left + 7, bubble.Top + 10, bubble.Left + 7, bubble.Top + 8, bubble.Left + 7, bubble.Top + 6, bubble.Left + 6, bubble.Top + 4);
-                    arrow.CloseFigure();
-                    e.Graphics.FillPath(arrowBrush, arrow);
-                }
-            }
+            e.ArrowColor = e.Item.Enabled ? PetUiTheme.Muted : SystemColors.GrayText;
+            base.OnRenderArrow(e);
         }
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
+            e.TextColor = e.Item.Enabled ? PetUiTheme.Ink : PetUiTheme.Muted;
             base.OnRenderItemText(e);
-            ToolStripMenuItem item = e.Item as ToolStripMenuItem;
-            if (item == null || !item.Checked) return;
-            Rectangle box = new Rectangle(e.TextRectangle.Left - 29, e.TextRectangle.Top + (e.TextRectangle.Height - 17) / 2, 17, 17);
-            using (Brush fill = new SolidBrush(Color.FromArgb(190, 224, 204)))
-            using (Pen border = new Pen(Color.FromArgb(111, 169, 137), 1f))
-            using (Pen check = new Pen(Color.FromArgb(63, 117, 82), 1.8f))
+        }
+
+        protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+        {
+            if (!e.Item.Selected || !e.Item.Enabled) return;
+            Rectangle bounds = new Rectangle(2, 1, Math.Max(1, e.Item.Width - 4), Math.Max(1, e.Item.Height - 2));
+            GraphicsState state = e.Graphics.Save();
+            try
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                e.Graphics.FillEllipse(fill, box);
-                e.Graphics.DrawEllipse(border, box);
-                check.StartCap = LineCap.Round;
-                check.EndCap = LineCap.Round;
-                e.Graphics.DrawLines(check, new Point[] { new Point(box.Left + 4, box.Top + 8), new Point(box.Left + 7, box.Top + 11), new Point(box.Right - 4, box.Top + 5) });
+                using (GraphicsPath path = Rounded(bounds, Math.Max(2, (int)(5 * e.Graphics.DpiX / 96))))
+                using (Brush fill = new SolidBrush(PetUiTheme.Hover)) e.Graphics.FillPath(fill, path);
             }
+            finally { e.Graphics.Restore(state); }
         }
 
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
@@ -204,8 +225,9 @@ namespace DieYing
             base.OnRenderToolStripBackground(e);
             ContextMenuStrip context = e.ToolStrip as ContextMenuStrip;
             if (context == null || EdgeMascot == null) return;
-            int x = context.Width - 22;
-            e.Graphics.DrawImage(EdgeMascot, new Rectangle(x, 7, EdgeMascot.Width, EdgeMascot.Height));
+            float scale = e.Graphics.DpiX / 96f;
+            int width = (int)(EdgeMascot.Width * scale), height = (int)(EdgeMascot.Height * scale);
+            e.Graphics.DrawImage(EdgeMascot, new Rectangle(context.Width - width - 12, (int)(12 * scale), width, height));
         }
 
         private static GraphicsPath Rounded(Rectangle rectangle, int radius)

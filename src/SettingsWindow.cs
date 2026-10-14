@@ -9,12 +9,12 @@ namespace DieYing
     /// <summary>蝶鼠桌宠设置窗口；设置变更在 UI 线程同步通知宿主，预览图片由本窗口管理。</summary>
     internal sealed class SettingsWindow : Form
     {
-        private static readonly Color Ink = Color.FromArgb(66, 49, 43);
-        private static readonly Color Muted = Color.FromArgb(128, 113, 98);
-        private static readonly Color Cream = Color.FromArgb(250, 247, 239);
-        private static readonly Color Gold = Color.FromArgb(234, 193, 83);
-        private static readonly Color Mint = Color.FromArgb(216, 238, 226);
-        private static readonly Color Line = Color.FromArgb(231, 225, 211);
+        private static readonly Color Ink = PetUiTheme.Ink;
+        private static readonly Color Muted = PetUiTheme.Muted;
+        private static readonly Color Cream = PetUiTheme.Cream;
+        private static readonly Color Gold = PetUiTheme.Gold;
+        private static readonly Color Mint = PetUiTheme.Mint;
+        private static readonly Color Line = PetUiTheme.Line;
         private readonly AppSettings settings;
         private readonly Action changed;
         private readonly Action resetPosition;
@@ -52,8 +52,8 @@ namespace DieYing
             BackColor = Cream;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96f, 96f);
-            ClientSize = new Size(940, 700);
-            MinimumSize = new Size(820, 590);
+            ClientSize = new Size(920, 680);
+            MinimumSize = new Size(800, 560);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = false;
@@ -73,17 +73,18 @@ namespace DieYing
 
             Panel sidebar = new Panel();
             sidebar.Dock = DockStyle.Fill;
-            sidebar.BackColor = Color.FromArgb(242, 236, 222);
+            sidebar.BackColor = PetUiTheme.Sidebar;
             sidebar.Margin = Padding.Empty;
             shell.Controls.Add(sidebar, 0, 0);
             TableLayoutPanel sidebarFlow = Stack();
             sidebarFlow.Padding = new Padding(18, 30, 18, 0);
             sidebarFlow.BackColor = sidebar.BackColor;
             sidebar.Controls.Add(sidebarFlow);
-            Label logo = LabelOf("蝶鼠桌宠", 25, FontStyle.Bold, Ink);
+            Label logo = LabelOf("蝶鼠桌宠", 16, FontStyle.Bold, Ink);
             logo.Margin = new Padding(5, 0, 0, 0);
             AddRow(sidebarFlow, logo);
-            Label tagline = LabelOf("指尖有声，身边有她", 8.5f, FontStyle.Regular, Muted);
+            shell.ColumnStyles[0].Width = Math.Max(180, TextRenderer.MeasureText(logo.Text, logo.Font).Width + 48);
+            Label tagline = LabelOf("指尖轻敲 · 陪伴你", 8.5f, FontStyle.Regular, Muted);
             tagline.Margin = new Padding(7, 2, 0, 30);
             AddRow(sidebarFlow, tagline);
 
@@ -106,7 +107,7 @@ namespace DieYing
             Label privacy = LabelOf("只响应输入动作\n不记录输入文本\n不上传键鼠数据", 8.5f, FontStyle.Regular, Muted);
             privacy.AutoSize = false;
             privacy.Dock = DockStyle.Bottom;
-            privacy.Height = 100;
+            privacy.Height = 82;
             privacy.Padding = new Padding(25, 10, 15, 12);
             privacy.TextAlign = ContentAlignment.MiddleLeft;
             sidebar.Controls.Add(privacy);
@@ -126,7 +127,7 @@ namespace DieYing
             statusLabel.Dock = DockStyle.Fill;
             statusLabel.Margin = Padding.Empty;
             statusLabel.Padding = new Padding(28, 0, 12, 0);
-            statusLabel.ForeColor = Muted;
+            statusLabel.ForeColor = PetUiTheme.Success;
             statusLabel.Font = MakeFont(8.5f, FontStyle.Regular);
             statusLabel.TextAlign = ContentAlignment.MiddleLeft;
             statusLabel.Text = "更改即时生效 · 设置由程序保存在本地";
@@ -180,14 +181,14 @@ namespace DieYing
             {
                 int skinIndex = i;
                 Panel tile = new Panel();
-                tile.Height = 277;
+                tile.Height = 210;
                 tile.Dock = DockStyle.Fill;
                 tile.Padding = new Padding(9);
                 tile.BackColor = Cream;
-                tile.Margin = new Padding(i == 0 ? 0 : 6, 0, i == 0 ? 6 : 0, 0);
+                tile.Margin = new Padding(i % 2 == 0 ? 0 : 8, 0, i % 2 == 0 ? 8 : 0, 10);
                 PictureBox picture = new PictureBox();
                 picture.Dock = DockStyle.Top;
-                picture.Height = 180;
+                picture.Height = 130;
                 picture.SizeMode = PictureBoxSizeMode.Zoom;
                 picture.BackColor = Cream;
                 picture.Cursor = Cursors.Hand;
@@ -197,11 +198,11 @@ namespace DieYing
                 Label caption = LabelOf(skinDetails[i], 8.5f, FontStyle.Regular, Muted);
                 caption.AutoSize = false;
                 caption.Dock = DockStyle.Bottom;
-                caption.Height = 28;
+                caption.Height = 24;
                 caption.TextAlign = ContentAlignment.MiddleCenter;
                 Button choose = PlainButton(skinNames[i]);
                 choose.Dock = DockStyle.Bottom;
-                choose.Height = 40;
+                choose.Height = 36;
                 choose.AccessibleName = "切换至" + skinNames[i];
                 choose.Click += delegate { settings.skin = skinIndex; ApplyChange(); };
                 tile.Controls.Add(picture);
@@ -211,8 +212,11 @@ namespace DieYing
                 refreshers.Add(delegate
                 {
                     bool active = settings.skin == skinIndex;
-                    choose.Text = skinNames[skinIndex] + (active ? "  ·  当前衣装" : "  ·  使用");
-                    choose.BackColor = active ? Mint : Color.White;
+                    tile.BackColor = active ? Mint : PetUiTheme.Surface;
+                    picture.BackColor = tile.BackColor;
+                    choose.Text = skinNames[skinIndex] + (active ? " · 已选" : "");
+                    choose.AccessibleDescription = active ? "当前正在使用的衣装" : "点击切换至这套衣装";
+                    choose.BackColor = tile.BackColor;
                     choose.FlatAppearance.BorderColor = active ? Color.FromArgb(152, 188, 166) : Line;
                     choose.FlatAppearance.BorderSize = 1;
                 });
@@ -358,7 +362,7 @@ namespace DieYing
             AddHint(mapping, "14 个常用键独立响应，圆手轻按键盘。鼠标使用所选显示区域的光标坐标，在垫面上小幅映射移动。");
             AddRow(body, mapping);
             TableLayoutPanel local = Card("本地运行", null);
-            AddHint(local, "只响应当前键鼠状态，不记录输入文本，也不上传键鼠数据。设置保存在程序所在工作目录，不会为你添加开机启动或修改系统设置。");
+            AddHint(local, "只响应当前键鼠状态，不记录输入文本，也不上传键鼠数据。偏好保存在程序目录的 data/settings.ini；开机自启与检查更新由你选择开启。");
             AddRow(body, local);
         }
 
@@ -369,7 +373,11 @@ namespace DieYing
             AddInstruction(update, "当前版本", "v" + UpdateService.VersionText);
             AddToggle(update, "自动检查更新", "启动时检查 GitHub 正式版；发现新版本后由你确认下载。", delegate { return settings.autoCheckUpdates; }, delegate(bool value) { settings.autoCheckUpdates = value; });
             Button check = PlainButton("检查更新");
+            check.Width = 136;
             check.Height = 39;
+            check.BackColor = Mint;
+            check.FlatAppearance.BorderSize = 1;
+            check.FlatAppearance.BorderColor = Line;
             check.Anchor = AnchorStyles.Left;
             check.Margin = new Padding(0, 13, 0, 0);
             check.Click += delegate { if (checkForUpdates != null) checkForUpdates(); };
@@ -413,7 +421,7 @@ namespace DieYing
             card.Dock = DockStyle.Top;
             card.AutoSize = true;
             card.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            card.BackColor = Color.White;
+            card.BackColor = PetUiTheme.Surface;
             card.Padding = new Padding(19, 17, 19, 18);
             card.Margin = new Padding(0, 0, 0, 17);
             Label heading = LabelOf(title, 11.5f, FontStyle.Bold, Ink);
@@ -421,7 +429,7 @@ namespace DieYing
             AddRow(card, heading);
             if (description != null)
             {
-                Label explanation = LabelOf(description, 8.8f, FontStyle.Regular, Muted);
+                Label explanation = LabelOf(description, 9f, FontStyle.Regular, Muted);
                 explanation.Margin = new Padding(0, 0, 0, 10);
                 AddRow(card, explanation);
             }
@@ -442,12 +450,12 @@ namespace DieYing
             Label name = LabelOf(title, 9.5f, FontStyle.Bold, Ink);
             name.Margin = new Padding(0, 0, 0, 4);
             AddRow(text, name);
-            Label detail = LabelOf(description, 8.5f, FontStyle.Regular, Muted);
+            Label detail = LabelOf(description, 9f, FontStyle.Regular, Muted);
             detail.Margin = Padding.Empty;
             AddRow(text, detail);
             row.Controls.Add(text, 0, 0);
             SettingsSwitch toggle = new SettingsSwitch();
-            toggle.Size = new Size(58, 29);
+            toggle.Size = new Size(62, 30);
             toggle.Anchor = AnchorStyles.Right;
             toggle.Margin = new Padding(8, 6, 0, 6);
             toggle.AccessibleName = title;
@@ -493,7 +501,7 @@ namespace DieYing
             slider.Height = 33;
             slider.Dock = DockStyle.Top;
             slider.Margin = Padding.Empty;
-            slider.BackColor = Color.White;
+            slider.BackColor = PetUiTheme.Surface;
             slider.AccessibleName = title;
             slider.AccessibleDescription = description;
             slider.ValueChanged += delegate
@@ -595,13 +603,13 @@ namespace DieYing
 
         private Button PlainButton(string text)
         {
-            Button button = new Button();
+            Button button = new SettingsButton();
             button.Text = text;
             button.ForeColor = Ink;
-            button.BackColor = Color.White;
+            button.BackColor = PetUiTheme.Surface;
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(249, 227, 173);
+            button.FlatAppearance.MouseOverBackColor = PetUiTheme.Hover;
             button.FlatAppearance.MouseDownBackColor = Gold;
             button.Font = MakeFont(9.5f, FontStyle.Bold);
             button.Cursor = Cursors.Hand;
@@ -676,7 +684,10 @@ namespace DieYing
             {
                 bool active = i == pageIndex;
                 pages[i].Visible = active;
-                navigation[i].BackColor = active ? Color.FromArgb(250, 226, 158) : Color.FromArgb(242, 236, 222);
+                navigation[i].BackColor = active ? PetUiTheme.Selected : PetUiTheme.Sidebar;
+                ((SettingsButton)navigation[i]).Selected = active;
+                navigation[i].AccessibleDescription = active ? "当前设置页面" : "打开对应的设置页面";
+                navigation[i].Invalidate();
             }
             pages[pageIndex].BringToFront();
         }
@@ -714,14 +725,56 @@ namespace DieYing
             public override string ToString() { return label; }
         }
 
-        private sealed class SettingsCard : TableLayoutPanel
+        private static GraphicsPath RoundedRectangle(RectangleF bounds, float radius)
         {
-            internal SettingsCard() { DoubleBuffered = true; }
+            GraphicsPath path = new GraphicsPath();
+            float diameter = Math.Min(radius * 2, Math.Min(bounds.Width, bounds.Height));
+            if (diameter <= 0) { path.AddRectangle(bounds); return path; }
+            path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        private sealed class SettingsButton : Button
+        {
+            internal bool Selected;
+
             protected override void OnPaint(PaintEventArgs e)
             {
                 base.OnPaint(e);
+                float scale = e.Graphics.DpiX / 96f;
+                if (Selected)
+                    using (Pen indicator = new Pen(PetUiTheme.Focus, 3 * scale))
+                    {
+                        indicator.StartCap = LineCap.Round; indicator.EndCap = LineCap.Round;
+                        e.Graphics.DrawLine(indicator, 4 * scale, 12 * scale, 4 * scale, Height - 12 * scale);
+                    }
+                if (Focused && ShowFocusCues)
+                    using (Pen outline = new Pen(PetUiTheme.Focus, 1.4f * scale))
+                        e.Graphics.DrawRectangle(outline, 1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
+            }
+        }
+
+        private sealed class SettingsCard : TableLayoutPanel
+        {
+            internal SettingsCard() { DoubleBuffered = true; ResizeRedraw = true; }
+            protected override void OnPaintBackground(PaintEventArgs e)
+            {
+                e.Graphics.Clear(Parent == null ? Cream : Parent.BackColor);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (GraphicsPath path = RoundedRectangle(new RectangleF(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3)), 10 * e.Graphics.DpiX / 96f))
+                using (Brush fill = new SolidBrush(BackColor)) e.Graphics.FillPath(fill, path);
+            }
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (GraphicsPath path = RoundedRectangle(new RectangleF(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3)), 10 * e.Graphics.DpiX / 96f))
                 using (Pen pen = new Pen(Line))
-                    e.Graphics.DrawRectangle(pen, 0, 0, Math.Max(0, Width - 1), Math.Max(0, Height - 1));
+                    e.Graphics.DrawPath(pen, path);
             }
         }
 
@@ -747,8 +800,8 @@ namespace DieYing
                     path.AddArc(bounds.X, bounds.Y, diameter, diameter, 90, 180);
                     path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 180);
                     path.CloseFigure();
-                    using (Brush track = new SolidBrush(Checked ? Color.FromArgb(176, 205, 187) : Color.FromArgb(221, 217, 207))) e.Graphics.FillPath(track, path);
-                    if (Focused) using (Pen outline = new Pen(Ink, 1.4f)) e.Graphics.DrawPath(outline, path);
+                    using (Brush track = new SolidBrush(Checked ? PetUiTheme.Success : Color.FromArgb(221, 217, 207))) e.Graphics.FillPath(track, path);
+                    if (Focused && ShowFocusCues) using (Pen outline = new Pen(PetUiTheme.Focus, 1.4f)) e.Graphics.DrawPath(outline, path);
                 }
                 float knob = diameter - 6;
                 float x = Checked ? bounds.Right - knob - 3 : bounds.X + 3;
